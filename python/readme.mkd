@@ -1,0 +1,31 @@
+Overall structure:
+Different layers of abstraction are given different files; 
+    eg. actors.py describes behavior of all entities at a programmatic level, 
+    species.py offers specific actor types and how they respond to their enviroment and characteristics,
+    and world.py creates individual actors of these species
+
+
+
+
+actors.py
+    |
+species.py
+    |
+world.py
+    |
+core.py
+
+things.py
+    |
+world.py
+    |
+core.py
+
+space.py
+    |
+world.py
+    |
+core.py
+
+parser.py
+output.py
