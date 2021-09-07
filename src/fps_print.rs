@@ -6,7 +6,7 @@ pub struct FPSPlugin;
 impl Plugin for FPSPlugin {
     fn build(&self, app: &mut AppBuilder) {
         app.add_plugin(FrameTimeDiagnosticsPlugin::default())
-            .add_resource(FPSTimer(Timer::from_seconds(1.0, true)))
+            .insert_resource(FPSTimer(Timer::from_seconds(1.0, true)))
             .add_system(fps_system.system());
     }
 }
@@ -14,8 +14,8 @@ impl Plugin for FPSPlugin {
 struct FPSTimer(Timer);
 
 fn fps_system(diagnostics: Res<Diagnostics>, time: Res<Time>, mut timer: ResMut<FPSTimer>) {
-    timer.0.tick(time.delta_seconds);
-    if timer.0.finished {
+    timer.0.tick(time);
+    if timer.0.finished() {
         let mut fps_value = 0.;
 
         if let Some(fps) = diagnostics.get(FrameTimeDiagnosticsPlugin::FPS) {
