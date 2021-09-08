@@ -152,7 +152,7 @@ fn move_actor(
 }
 
 fn plan_path(position: Position, destination: Destination, tilemap: &ResMut<TileMap>) -> Path {
-    let mut plan = astar(
+    let plan = astar(
         &position,
         |p| move_weights(p, tilemap),
         |p| {

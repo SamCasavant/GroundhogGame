@@ -4,7 +4,8 @@ use bevy::{
     ecs::{archetype::Archetypes, entity::Entities, component::Components}
 };
 
-mod engine;
+extern crate engine;
+
 fn main() {
     App::build()
         .add_plugin(FrameTimeDiagnosticsPlugin::default())
