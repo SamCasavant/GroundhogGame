@@ -42,6 +42,7 @@ impl PartialEq<Position> for Destination {
 
 fn move_actor(
     mut tilemap: ResMut<TileMap>,
+    time: Res<Time>,
     mut query: Query<(
         Entity,
         &mut Timer,
@@ -52,13 +53,14 @@ fn move_actor(
         &mut Transform,
     )>,
 ) {
-    for (entity, timer, mut position, mut orientation, mut destination, mut path, mut transform) in
+    for (entity, mut timer, mut position, mut orientation, mut destination, mut path, mut transform) in
         &mut query.iter_mut()
     {
+        timer.tick(time.delta());
         if path.0.len() < 1 {
             *path = plan_path(*position, *destination, &tilemap);
         }
-        if timer.finished() {
+        if timer.just_finished() {
             if path.0.len() > 0 {
                 let mut next_step = path.0[0];
                 // If an entity's path is blocked by another entity, first try to find an alternate move that gets closer to the destination.
@@ -112,11 +114,12 @@ fn move_actor(
                     path.0.remove(0);
                 }
                 //Prepare animation
-                let translation = Transform::from_xyz(
+                let translation = Vec3::new(
                     (next_step.x - position.x) as f32 * TILE_WIDTH,
                     (next_step.y - position.y) as f32 * TILE_WIDTH,
                     0.0,
                 );
+                transform.translation += translation;
                 match next_step {
                     Position { x: 1, .. } => *orientation = Orientation(Direction::Up),
                     Position { x: -1, .. } => *orientation = Orientation(Direction::Down),
@@ -137,11 +140,12 @@ fn move_actor(
                 tile.occupied = true;
             }
             if *destination == *position {
-                let xrange = RangeInclusive::new(-100, 100);
+                let xrange = RangeInclusive::new(-15, 15);
                 let yrange = xrange.clone();
                 let mut rng = rand::thread_rng();
                 destination.0.x = rng.gen_range(xrange);
                 destination.0.y = rng.gen_range(yrange);
+
             }
         }
     }
@@ -270,7 +274,7 @@ fn setup(
     commands.spawn_bundle(OrthographicCameraBundle::new_2d());
 
     //Make the map
-    let handle: Handle<TiledMap> = asset_server.load("assets/maps/test.tmx");
+    let handle: Handle<TiledMap> = asset_server.load("maps/test.tmx");
 
     let map_entity = commands.spawn().id();
 
@@ -282,26 +286,29 @@ fn setup(
     });
 }
 
-fn animate_sprite_system(mut query: Query<(&mut TextureAtlasSprite, &mut Orientation)>) {
-    for (mut sprite, orientation) in &mut query.iter_mut() {
+fn animate_sprite_system(mut query: Query<(&mut TextureAtlasSprite, &mut Transform, &Orientation, &Position)>) {
+    for (mut sprite, mut transform, orientation, position) in &mut query.iter_mut() {
         match orientation.0 {
             Direction::Up => sprite.index = 5,
             Direction::Down => sprite.index = 1,
             Direction::Left => sprite.index = 10,
             Direction::Right => sprite.index = 13,
-            _ => sprite.index = 15,
+            Direction::UpLeft => todo!(),
+            Direction::UpRight => todo!(),
+            Direction::DownLeft => todo!(),
+            Direction::DownRight => todo!(),
         }
     }
 }
 
 pub fn init_sprite_sheet(
     path: &str,
-    asset_server: Res<AssetServer>,
-    mut texture_atlases: ResMut<Assets<TextureAtlas>>,
+    asset_server: &Res<AssetServer>,
+    mut texture_atlases: &mut ResMut<Assets<TextureAtlas>>,
     position: Position,
 ) -> SpriteSheetBundle {
     let texture_handle = asset_server.load(path);
-    let texture_atlas = TextureAtlas::from_grid(texture_handle, Vec2::new(24.0, 24.0), 7, 1);
+    let texture_atlas = TextureAtlas::from_grid(texture_handle, Vec2::new(4.0, 4.0), 4, 4);
     let texture_atlas_handle = texture_atlases.add(texture_atlas);
 
     SpriteSheetBundle {
@@ -310,6 +317,37 @@ pub fn init_sprite_sheet(
         ..Default::default()
     }
 }
+
+// commands
+// .spawn_bundle(SpriteSheetBundle {
+//     texture_atlas: texture_atlas_handle,
+//     transform: Transform::from_scale(Vec3::splat(6.0)),
+//     ..Default::default()
+// }).get;
+// fn init_sprite_sheet(
+//     path: String,
+//     asset_server: &Res<AssetServer>,
+//     mut textures: &mut ResMut<Assets<Texture>>,
+//     texture_atlases: &mut ResMut<Assets<TextureAtlas>>,
+//     position: Position,
+// ) -> SpriteSheetComponents {
+
+//     let texture_handle = asset_server.load_sync(&mut textures, path).unwrap();
+//     let texture = textures.get(&texture_handle).unwrap();
+//     let texture_atlas = TextureAtlas::from_grid(texture_handle, texture.size, 4, 4);
+//     let texture_atlas_handle = texture_atlases.add(texture_atlas);
+//     let mut transform = Transform::from_scale(0.1);
+//     let translation = Transform::from_xyz(
+//         position.x as f32 * TILE_WIDTH,
+//         position.y as f32 * TILE_WIDTH,
+//         0.0,
+//     );
+//     SpriteSheetComponents {
+//         texture_atlas: texture_atlas_handle,
+//         transform: transform,
+//         ..Default::default()
+//     }
+// }
 
 pub fn camera_movement(
     time: Res<Time>,
