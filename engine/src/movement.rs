@@ -1,4 +1,4 @@
-use bevy::{prelude::*, render::camera::Camera, sprite::SpriteSettings};
+pub(crate) use bevy::{prelude::*, render::camera::Camera};
 
 extern crate pathfinding;
 use pathfinding::prelude::{absdiff, astar};
@@ -9,6 +9,7 @@ use std::ops::RangeInclusive;
 
 use rand::Rng;
 
+mod camera_movement;
 pub struct Orientation(pub Direction);
 #[derive(Debug, Copy, Clone, PartialEq, Hash, Eq)]
 pub struct Position {
@@ -44,7 +45,6 @@ fn move_actor(
     mut tilemap: ResMut<TileMap>,
     time: Res<Time>,
     mut query: Query<(
-        Entity,
         &mut Timer,
         &mut Position,
         &mut Orientation,
@@ -53,7 +53,7 @@ fn move_actor(
         &mut Transform,
     )>,
 ) {
-    for (entity, mut timer, mut position, mut orientation, mut destination, mut path, mut transform) in
+    for (mut timer, mut position, mut orientation, mut destination, mut path, mut transform) in
         &mut query.iter_mut()
     {
         timer.tick(time.delta());
@@ -113,13 +113,7 @@ fn move_actor(
                 } else {
                     path.0.remove(0);
                 }
-                //Prepare animation
-                let translation = Vec3::new(
-                    (next_step.x - position.x) as f32 * TILE_WIDTH,
-                    (next_step.y - position.y) as f32 * TILE_WIDTH,
-                    0.0,
-                );
-                transform.translation += translation;
+
                 match next_step {
                     Position { x: 1, .. } => *orientation = Orientation(Direction::Up),
                     Position { x: -1, .. } => *orientation = Orientation(Direction::Down),
@@ -237,7 +231,7 @@ impl Plugin for GraphicsPlugin {
         .add_plugin(TiledMapPlugin)
         .add_system(animate_sprite_system.system())
         .add_startup_system(setup.system())
-        .add_system(camera_movement.system());
+        .add_system(camera_movement::camera_movement.system());
     }
 }
 #[derive(Debug)]
@@ -266,9 +260,6 @@ const TILE_WIDTH: f32 = 16.0;
 fn setup(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
-    textures: ResMut<Assets<Texture>>,
-    texture_atlases: ResMut<Assets<TextureAtlas>>,
-    tilemap: ResMut<TileMap>,
 ) {
     //Make the camera
     commands.spawn_bundle(OrthographicCameraBundle::new_2d());
@@ -288,6 +279,7 @@ fn setup(
 
 fn animate_sprite_system(mut query: Query<(&mut TextureAtlasSprite, &mut Transform, &Orientation, &Position)>) {
     for (mut sprite, mut transform, orientation, position) in &mut query.iter_mut() {
+        // Set sprite to match orientation
         match orientation.0 {
             Direction::Up => sprite.index = 5,
             Direction::Down => sprite.index = 1,
@@ -298,6 +290,13 @@ fn animate_sprite_system(mut query: Query<(&mut TextureAtlasSprite, &mut Transfo
             Direction::DownLeft => todo!(),
             Direction::DownRight => todo!(),
         }
+        //Move sprite to match position
+        let translation = Vec3::new(
+            position.x as f32 * TILE_WIDTH,
+            position.y as f32 * TILE_WIDTH,
+            0.0,
+        );
+        transform.translation = translation;
     }
 }
 
@@ -349,28 +348,3 @@ pub fn init_sprite_sheet(
 //     }
 // }
 
-pub fn camera_movement(
-    time: Res<Time>,
-    keyboard_input: Res<Input<KeyCode>>,
-    mut query: Query<&mut Transform, With<Camera>>,
-) {
-    for mut transform in &mut query.iter_mut() {
-        let mut direction = Vec3::ZERO;
-        if keyboard_input.pressed(KeyCode::A) {
-            direction -= Vec3::new(1.0, 0.0, 0.0);
-        }
-
-        if keyboard_input.pressed(KeyCode::E) {
-            direction += Vec3::new(1.0, 0.0, 0.0);
-        }
-
-        if keyboard_input.pressed(KeyCode::Comma) {
-            direction += Vec3::new(0.0, 1.0, 0.0);
-        }
-
-        if keyboard_input.pressed(KeyCode::O) {
-            direction -= Vec3::new(0.0, 1.0, 0.0);
-        }
-        transform.translation += time.delta_seconds() * direction * 500.0;
-    }
-}

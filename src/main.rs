@@ -21,9 +21,8 @@ fn main() {
 
 fn add_people(
     mut commands: Commands,
-    asset_server: Res<AssetServer>,
-    mut textures: ResMut<Assets<Texture>>,
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
+    asset_server: Res<AssetServer>,
 ) {
     let mut x = 0;
     while x < 20 {

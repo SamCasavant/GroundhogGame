@@ -1,6 +1,4 @@
-use bevy::{prelude::*, sprite::SpriteSettings};
-
-use std::collections::{btree_map::Range, HashMap};
+use bevy::{prelude::*};
 
 pub mod movement;
 

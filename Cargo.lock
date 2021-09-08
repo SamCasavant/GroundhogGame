@@ -1425,10 +1425,7 @@ name = "game"
 version = "0.1.0"
 dependencies = [
  "bevy",
- "bevy_ecs_tilemap",
  "engine",
- "pathfinding",
- "rand 0.8.4",
 ]
 
 [[package]]
