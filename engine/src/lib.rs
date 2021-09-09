@@ -5,24 +5,25 @@ pub mod movement;
 #[derive(Bundle)]
 struct ActorComponents {
     spritesheet: SpriteSheetBundle,
-    position: movement::Position,
+    position: movement::pathing::Position,
     identity: Identity,
-    destination: movement::Destination,
+    destination: movement::pathing::Destination,
 }
 
 pub fn spawn_actor(
     commands: &mut Commands,
     identity: Identity,
-    position: movement::Position,
+    position: movement::pathing::Position,
+    destination: movement::pathing::Destination,
     sprite_sheet: SpriteSheetBundle,
 ) {
     commands
         .spawn()
         .insert(identity)
         .insert(position)
-        .insert(movement::Path(vec![]))
-        .insert(movement::Orientation(movement::Direction::Down))
-        .insert(movement::Destination(movement::Position { x: 0, y: 0 }))
+        .insert(movement::pathing::Path(vec![]))
+        .insert(movement::pathing::Orientation(movement::pathing::Direction::Down))
+        .insert(destination)
         .insert_bundle(sprite_sheet)
         .insert(Timer::from_seconds(0.1, true));
 }

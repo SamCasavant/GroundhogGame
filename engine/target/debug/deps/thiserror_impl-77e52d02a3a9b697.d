@@ -1,0 +1,12 @@
+/home/sam/Projects/game/engine/target/debug/deps/libthiserror_impl-77e52d02a3a9b697.so: /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/thiserror-impl-1.0.29/src/lib.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/thiserror-impl-1.0.29/src/ast.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/thiserror-impl-1.0.29/src/attr.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/thiserror-impl-1.0.29/src/expand.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/thiserror-impl-1.0.29/src/fmt.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/thiserror-impl-1.0.29/src/generics.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/thiserror-impl-1.0.29/src/prop.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/thiserror-impl-1.0.29/src/valid.rs
+
+/home/sam/Projects/game/engine/target/debug/deps/thiserror_impl-77e52d02a3a9b697.d: /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/thiserror-impl-1.0.29/src/lib.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/thiserror-impl-1.0.29/src/ast.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/thiserror-impl-1.0.29/src/attr.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/thiserror-impl-1.0.29/src/expand.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/thiserror-impl-1.0.29/src/fmt.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/thiserror-impl-1.0.29/src/generics.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/thiserror-impl-1.0.29/src/prop.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/thiserror-impl-1.0.29/src/valid.rs
+
+/home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/thiserror-impl-1.0.29/src/lib.rs:
+/home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/thiserror-impl-1.0.29/src/ast.rs:
+/home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/thiserror-impl-1.0.29/src/attr.rs:
+/home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/thiserror-impl-1.0.29/src/expand.rs:
+/home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/thiserror-impl-1.0.29/src/fmt.rs:
+/home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/thiserror-impl-1.0.29/src/generics.rs:
+/home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/thiserror-impl-1.0.29/src/prop.rs:
+/home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/thiserror-impl-1.0.29/src/valid.rs:

@@ -1,0 +1,14 @@
+/home/sam/Projects/game/engine/target/debug/deps/ab_glyph-ff30eb93e836d99c.rmeta: /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/ab_glyph-0.2.11/src/lib.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/ab_glyph-0.2.11/src/codepoint_ids.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/ab_glyph-0.2.11/src/err.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/ab_glyph-0.2.11/src/font.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/ab_glyph-0.2.11/src/font_arc.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/ab_glyph-0.2.11/src/glyph.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/ab_glyph-0.2.11/src/outlined.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/ab_glyph-0.2.11/src/scale.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/ab_glyph-0.2.11/src/ttfp.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/ab_glyph-0.2.11/src/ttfp/outliner.rs
+
+/home/sam/Projects/game/engine/target/debug/deps/ab_glyph-ff30eb93e836d99c.d: /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/ab_glyph-0.2.11/src/lib.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/ab_glyph-0.2.11/src/codepoint_ids.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/ab_glyph-0.2.11/src/err.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/ab_glyph-0.2.11/src/font.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/ab_glyph-0.2.11/src/font_arc.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/ab_glyph-0.2.11/src/glyph.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/ab_glyph-0.2.11/src/outlined.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/ab_glyph-0.2.11/src/scale.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/ab_glyph-0.2.11/src/ttfp.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/ab_glyph-0.2.11/src/ttfp/outliner.rs
+
+/home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/ab_glyph-0.2.11/src/lib.rs:
+/home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/ab_glyph-0.2.11/src/codepoint_ids.rs:
+/home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/ab_glyph-0.2.11/src/err.rs:
+/home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/ab_glyph-0.2.11/src/font.rs:
+/home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/ab_glyph-0.2.11/src/font_arc.rs:
+/home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/ab_glyph-0.2.11/src/glyph.rs:
+/home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/ab_glyph-0.2.11/src/outlined.rs:
+/home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/ab_glyph-0.2.11/src/scale.rs:
+/home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/ab_glyph-0.2.11/src/ttfp.rs:
+/home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/ab_glyph-0.2.11/src/ttfp/outliner.rs:

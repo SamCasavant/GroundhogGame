@@ -1,7 +1,6 @@
 use bevy::{prelude::*, render::camera::Camera};
-use bevy::input::mouse::{MouseMotion, MouseButtonInput, MouseWheel};
-use bevy::input::keyboard::KeyboardInput;
-use bevy::app::Events;
+use bevy::input::mouse::{MouseWheel};
+
 
 
 

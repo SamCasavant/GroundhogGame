@@ -1,0 +1,12 @@
+/home/sam/Projects/game/engine/target/debug/deps/glyph_brush_layout-34ad8920b2e01336.rmeta: /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/glyph_brush_layout-0.2.3/src/lib.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/glyph_brush_layout-0.2.3/src/builtin.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/glyph_brush_layout-0.2.3/src/characters.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/glyph_brush_layout-0.2.3/src/font.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/glyph_brush_layout-0.2.3/src/linebreak.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/glyph_brush_layout-0.2.3/src/lines.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/glyph_brush_layout-0.2.3/src/section.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/glyph_brush_layout-0.2.3/src/words.rs
+
+/home/sam/Projects/game/engine/target/debug/deps/glyph_brush_layout-34ad8920b2e01336.d: /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/glyph_brush_layout-0.2.3/src/lib.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/glyph_brush_layout-0.2.3/src/builtin.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/glyph_brush_layout-0.2.3/src/characters.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/glyph_brush_layout-0.2.3/src/font.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/glyph_brush_layout-0.2.3/src/linebreak.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/glyph_brush_layout-0.2.3/src/lines.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/glyph_brush_layout-0.2.3/src/section.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/glyph_brush_layout-0.2.3/src/words.rs
+
+/home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/glyph_brush_layout-0.2.3/src/lib.rs:
+/home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/glyph_brush_layout-0.2.3/src/builtin.rs:
+/home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/glyph_brush_layout-0.2.3/src/characters.rs:
+/home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/glyph_brush_layout-0.2.3/src/font.rs:
+/home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/glyph_brush_layout-0.2.3/src/linebreak.rs:
+/home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/glyph_brush_layout-0.2.3/src/lines.rs:
+/home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/glyph_brush_layout-0.2.3/src/section.rs:
+/home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/glyph_brush_layout-0.2.3/src/words.rs:

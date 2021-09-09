@@ -1,0 +1,15 @@
+/home/sam/Projects/game/engine/target/debug/deps/bevy_text-5409ed0a14d4f325.rmeta: /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/bevy_text-0.5.0/src/lib.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/bevy_text-0.5.0/src/draw.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/bevy_text-0.5.0/src/error.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/bevy_text-0.5.0/src/font.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/bevy_text-0.5.0/src/font_atlas.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/bevy_text-0.5.0/src/font_atlas_set.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/bevy_text-0.5.0/src/font_loader.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/bevy_text-0.5.0/src/glyph_brush.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/bevy_text-0.5.0/src/pipeline.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/bevy_text-0.5.0/src/text.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/bevy_text-0.5.0/src/text2d.rs
+
+/home/sam/Projects/game/engine/target/debug/deps/bevy_text-5409ed0a14d4f325.d: /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/bevy_text-0.5.0/src/lib.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/bevy_text-0.5.0/src/draw.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/bevy_text-0.5.0/src/error.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/bevy_text-0.5.0/src/font.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/bevy_text-0.5.0/src/font_atlas.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/bevy_text-0.5.0/src/font_atlas_set.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/bevy_text-0.5.0/src/font_loader.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/bevy_text-0.5.0/src/glyph_brush.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/bevy_text-0.5.0/src/pipeline.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/bevy_text-0.5.0/src/text.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/bevy_text-0.5.0/src/text2d.rs
+
+/home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/bevy_text-0.5.0/src/lib.rs:
+/home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/bevy_text-0.5.0/src/draw.rs:
+/home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/bevy_text-0.5.0/src/error.rs:
+/home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/bevy_text-0.5.0/src/font.rs:
+/home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/bevy_text-0.5.0/src/font_atlas.rs:
+/home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/bevy_text-0.5.0/src/font_atlas_set.rs:
+/home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/bevy_text-0.5.0/src/font_loader.rs:
+/home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/bevy_text-0.5.0/src/glyph_brush.rs:
+/home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/bevy_text-0.5.0/src/pipeline.rs:
+/home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/bevy_text-0.5.0/src/text.rs:
+/home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/bevy_text-0.5.0/src/text2d.rs:
