@@ -1,20 +1,3 @@
-/*
-Entities with a Path component use this module to pathfind and proceed through steps in their path.
-Paths are initialized in full using aStar. 
-Paths are stored in the Path component (a vector of positions) and elements are shifted off when a step is taken.
-The move_actor function handles final adjustments to the path in the event of a potential collision with another entity.
-Ground Types are used to produce tile weights, which hopefully can encourage aStar to prefer sidewalks over roads.
-
-TODO:
-Allow actors to rejoin path rather than starting over in the event of a correction.
-Create a system for near objectives to save aStar effort.
-Find a better way to store currently occupied positions? (Using hashmap for now)
-Improve GroundType integration with tile map.
-Integrate tile system with bevy_ECS_tiles
-
-*/
-
-
 pub(crate) use bevy::{prelude::*};
 
 extern crate pathfinding;
@@ -25,63 +8,6 @@ use std::ops::RangeInclusive;
 use std::convert::TryInto;
 
 use rand::Rng;
-
-pub struct Orientation(pub Direction);
-
-#[derive(Debug, Copy, Clone, PartialEq, Hash, Eq)]
-pub struct Position {
-    pub x: i64,
-    pub y: i64,
-}
-
-pub struct Path(pub Vec<Position>);
-
-#[derive(Default)]
-struct PlannedSteps {
-    steps: HashMap<Position, bevy::prelude::Entity>,
-}
-
-#[derive(Debug, Copy, Clone)]
-pub struct Destination(pub Position);
-
-impl PartialEq<Position> for Destination {
-    fn eq(&self, other: &Position) -> bool {
-        self.0.x == other.x && self.0.y == other.y
-    }
-}
-
-#[derive(Debug)]
-pub enum GroundType {
-    ShortGrass,
-    TallGrass,
-    Sidewalk,
-    Path,
-    Street,
-    Crosswalk,
-    Obstacle,
-}
-#[derive(Debug, Copy, Clone, PartialEq, Hash, Eq)]
-pub enum Direction {
-    Up,
-    UpLeft,
-    UpRight,
-    Down,
-    DownLeft,
-    DownRight, //This is downright.
-    Left,
-    Right,
-}
-
-#[derive(Debug)]
-pub struct Tile {
-    pub occupied: bool,
-    pub ground_type: GroundType,
-}
-#[derive(Default)]
-pub struct TileMap {
-    pub map: HashMap<Position, Tile>,
-}
-
 
 pub struct MovementPlugin;
 
@@ -185,7 +111,7 @@ pub fn move_actor(
                 });
                 tile.occupied = true;
             }
-            if *destination == *position { //TODO: Move destination changes to higher level module, derandomize. This will likely involve an 'at_destination component'.
+            if *destination == *position {
                 let xrange = RangeInclusive::new(-15, 15);
                 let yrange = xrange.clone();
                 let mut rng = rand::thread_rng();
@@ -238,20 +164,3 @@ fn move_weights(position: &Position, tilemap: &ResMut<TileMap>) -> Vec<(Position
     return weights;
 }
 
-fn tile_weight(position: Position, tilemap: &ResMut<TileMap>) -> u32 {
-    let mut weight = 1;
-    if tilemap.map.contains_key(&position) {
-        match tilemap.map.get(&position).unwrap() {
-            Tile {
-                ground_type: GroundType::Obstacle,
-                ..
-            } => weight = u32::MAX,
-            Tile {
-                ground_type: GroundType::Street,
-                ..
-            } => weight = 10,
-            _ => weight = 1,
-        }
-    }
-    weight
-}

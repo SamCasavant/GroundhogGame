@@ -2,8 +2,12 @@
 
 ## Introduction
 
-A Rust/Bevy ECS game that uses autonomous agents to build out a small, deterministic open world. 
+A Rust/Bevy ECS game that uses autonomous agents to build out a small, deterministic open world.
 
-The python/ directory contains an earlier text-based attempt which runs too slowly to be useful and has some architectural issues. It is included for reference purposes in further development, as much of the logic has not been implemented in the new rust version. 
+This is primarily divided into an [engine](engine) which manages game processes, and [source scripts](source) which define the initial world state. The engine has been further divided into a few pieces, but that is still a work in progress. Several files are duplicated as a result of that work. 'Over-engineered' is an apt descriptor, but the scope of further updates should justify the initial overcomplexity. 
 
-This project is not currently in an operational state, as it was written shortly after Bevy was publicized and is not up-to-date with the latest versions of libraries.
+The python/ directory contains an earlier text-based attempt which runs too slowly to be useful and has some architectural issues. It is included for reference purposes for further development, as much of the logic has not been implemented in the rust version. 
+
+In its present state, this is a stress test of the pathing system.
+
+Immediate goals are optimization of the current system and reorganization of modules into a cleaner hierarchy. 

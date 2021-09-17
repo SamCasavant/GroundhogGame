@@ -1,3 +1,8 @@
+/*
+The engine is responsible for building and operating the game. 
+This file should be an interface between the engine and external world building scripts.
+*/
+
 use bevy::{prelude::*};
 
 pub mod movement;

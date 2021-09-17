@@ -1,10 +1,5 @@
-/* This system handles user input control of the camera.*/
-
 use bevy::{prelude::*, render::camera::Camera};
 use bevy::input::mouse::{MouseWheel};
-
-
-
 
 pub fn camera_movement(
     time: Res<Time>,

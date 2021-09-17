@@ -1,3 +1,8 @@
+/* 
+This module builds and draws the world map and the sprites within it.
+The role of this module and its name will likely change during restructuring process.
+*/
+
 pub(crate) use bevy::{prelude::*};
 use bevy_ecs_tilemap::prelude::*;
 

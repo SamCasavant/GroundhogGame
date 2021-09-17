@@ -1,8 +1,16 @@
+/*
+Contains the game. 
+This is separate from the engine to limit complexity.
+*/
+
 use bevy::{
     diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin},
+    ecs::{archetype::Archetypes, component::Components, entity::Entities},
     prelude::*,
-    ecs::{archetype::Archetypes, entity::Entities, component::Components}
 };
+
+use std::ops::RangeInclusive;
+use rand::Rng;
 
 extern crate engine;
 
@@ -25,9 +33,17 @@ fn add_people(
     asset_server: Res<AssetServer>,
 ) {
     let mut x = 0;
+    
     while x < 500 {
-        let position = engine::movement::pathing::Position { x: -30, y: 0 };
-        let destination = engine::movement::pathing::Destination(engine::movement::pathing::Position{x: 30, y: 0});
+        let xrange = RangeInclusive::new(-90, 90);
+        let yrange = xrange.clone();
+        let mut rng = rand::thread_rng();
+        let position = engine::movement::pathing::Position { x: rng.gen_range(xrange), y: rng.gen_range(yrange) };
+        let destination =
+            engine::movement::pathing::Destination(engine::movement::pathing::Position {
+                x: 30,
+                y: 0,
+            });
 
         let sprite_sheet = engine::movement::init_sprite_sheet(
             &"sprites/NPC1 (2).png".to_string(),
@@ -49,9 +65,16 @@ fn add_people(
         println!("Spawing entity {}", x);
     }
     while x < 1000 {
-        let position = engine::movement::pathing::Position { x: 30, y: 0 };
+        let xrange = RangeInclusive::new(-90, 90);
+        let yrange = xrange.clone();
+        let mut rng = rand::thread_rng();
+        let position = engine::movement::pathing::Position { x: rng.gen_range(xrange), y: rng.gen_range(yrange) };
 
-        let destination = engine::movement::pathing::Destination(engine::movement::pathing::Position{x: -30, y: 0});
+        let destination =
+            engine::movement::pathing::Destination(engine::movement::pathing::Position {
+                x: -30,
+                y: 0,
+            });
 
         let sprite_sheet = engine::movement::init_sprite_sheet(
             &"sprites/NPC1 (2).png".to_string(),

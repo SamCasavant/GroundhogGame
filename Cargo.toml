@@ -9,4 +9,6 @@ edition = "2018"
 [dependencies]
 bevy = { version = "0.5.0", features = ["dynamic"] }
 
+rand = "0.8.4" #Note: Rand will likely not be used in final deterministic release
+
 engine = { path = "engine" }
