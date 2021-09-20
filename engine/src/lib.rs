@@ -1,9 +1,9 @@
 /*
-The engine is responsible for building and operating the game. 
+The engine is responsible for building and operating the game.
 This file should be an interface between the engine and external world building scripts.
 */
 
-use bevy::{prelude::*};
+use bevy::prelude::*;
 
 pub mod movement;
 
@@ -27,7 +27,9 @@ pub fn spawn_actor(
         .insert(identity)
         .insert(position)
         .insert(movement::pathing::Path(vec![]))
-        .insert(movement::pathing::Orientation(movement::pathing::Direction::Down))
+        .insert(movement::pathing::Orientation(
+            movement::pathing::Direction::Down,
+        ))
         .insert(destination)
         .insert_bundle(sprite_sheet)
         .insert(Timer::from_seconds(0.1, true));

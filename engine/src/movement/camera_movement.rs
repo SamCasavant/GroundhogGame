@@ -1,10 +1,7 @@
 /* This system handles user input control of the camera.*/
 
+use bevy::input::mouse::MouseWheel;
 use bevy::{prelude::*, render::camera::Camera};
-use bevy::input::mouse::{MouseWheel};
-
-
-
 
 pub fn camera_movement(
     time: Res<Time>,
@@ -13,7 +10,6 @@ pub fn camera_movement(
     mut query: Query<&mut Transform, With<Camera>>,
 ) {
     for mut transform in &mut query.iter_mut() {
-
         let mut direction = Vec3::ZERO;
         let scale = transform.scale.x;
 
@@ -33,7 +29,7 @@ pub fn camera_movement(
             direction -= Vec3::new(0.0, 1.0, 0.0);
         }
         for event in scroll_events.iter() {
-            let scale = scale - event.y/5.0;
+            let scale = scale - event.y / 5.0;
             transform.scale = Vec3::splat(scale);
         }
         if transform.scale.x < 1.0 {

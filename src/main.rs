@@ -1,5 +1,5 @@
 /*
-Contains the game. 
+Contains the game.
 This is separate from the engine to limit complexity.
 */
 
@@ -9,8 +9,8 @@ use bevy::{
     prelude::*,
 };
 
-use std::ops::RangeInclusive;
 use rand::Rng;
+use std::ops::RangeInclusive;
 
 extern crate engine;
 
@@ -33,12 +33,15 @@ fn add_people(
     asset_server: Res<AssetServer>,
 ) {
     let mut x = 0;
-    
+
     while x < 500 {
         let xrange = RangeInclusive::new(-90, 90);
         let yrange = xrange.clone();
         let mut rng = rand::thread_rng();
-        let position = engine::movement::pathing::Position { x: rng.gen_range(xrange), y: rng.gen_range(yrange) };
+        let position = engine::movement::pathing::Position {
+            x: rng.gen_range(xrange),
+            y: rng.gen_range(yrange),
+        };
         let destination =
             engine::movement::pathing::Destination(engine::movement::pathing::Position {
                 x: 30,
@@ -62,13 +65,15 @@ fn add_people(
             sprite_sheet,
         );
         x += 1;
-        println!("Spawing entity {}", x);
     }
     while x < 1000 {
         let xrange = RangeInclusive::new(-90, 90);
         let yrange = xrange.clone();
         let mut rng = rand::thread_rng();
-        let position = engine::movement::pathing::Position { x: rng.gen_range(xrange), y: rng.gen_range(yrange) };
+        let position = engine::movement::pathing::Position {
+            x: rng.gen_range(xrange),
+            y: rng.gen_range(yrange),
+        };
 
         let destination =
             engine::movement::pathing::Destination(engine::movement::pathing::Position {
@@ -93,8 +98,8 @@ fn add_people(
             sprite_sheet,
         );
         x += 1;
-        println!("Spawing entity {}", x);
     }
+    println!("Spawned {} entities.", x);
 }
 
 fn add_roads(mut tilemap: ResMut<engine::movement::pathing::TileMap>) {

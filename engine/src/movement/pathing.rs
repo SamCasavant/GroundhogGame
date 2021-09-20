@@ -1,6 +1,6 @@
 /*
 Entities with a Path component use this module to pathfind and proceed through steps in their path.
-Paths are initialized in full using aStar. 
+Paths are initialized in full using aStar.
 Paths are stored in the Path component (a vector of positions) and elements are shifted off when a step is taken.
 The move_actor function handles final adjustments to the path in the event of a potential collision with another entity.
 Ground Types are used to produce tile weights, which hopefully can encourage aStar to prefer sidewalks over roads.
@@ -14,15 +14,14 @@ Integrate tile system with bevy_ECS_tiles
 
 */
 
-
-pub(crate) use bevy::{prelude::*};
+pub(crate) use bevy::prelude::*;
 
 extern crate pathfinding;
 use pathfinding::prelude::{absdiff, astar};
 
 use std::collections::HashMap;
-use std::ops::RangeInclusive;
 use std::convert::TryInto;
+use std::ops::RangeInclusive;
 
 use rand::Rng;
 
@@ -82,7 +81,6 @@ pub struct TileMap {
     pub map: HashMap<Position, Tile>,
 }
 
-
 pub struct MovementPlugin;
 
 impl Plugin for MovementPlugin {
@@ -102,7 +100,7 @@ pub fn move_actor(
         &mut Position,
         &mut Orientation,
         &mut Destination,
-        &mut Path
+        &mut Path,
     )>,
 ) {
     for (mut timer, mut position, mut orientation, mut destination, mut path) in
@@ -185,13 +183,13 @@ pub fn move_actor(
                 });
                 tile.occupied = true;
             }
-            if *destination == *position { //TODO: Move destination changes to higher level module, derandomize. This will likely involve an 'at_destination component'.
+            if *destination == *position {
+                //TODO: Move destination changes to higher level module, derandomize. This will likely involve an 'at_destination component'.
                 let xrange = RangeInclusive::new(-15, 15);
                 let yrange = xrange.clone();
                 let mut rng = rand::thread_rng();
                 destination.0.x = rng.gen_range(xrange);
                 destination.0.y = rng.gen_range(yrange);
-
             }
         }
     }

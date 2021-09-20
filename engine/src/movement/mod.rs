@@ -1,18 +1,16 @@
-/* 
+/*
 This module builds and draws the world map and the sprites within it.
 The role of this module and its name will likely change during restructuring process.
 */
 
-pub(crate) use bevy::{prelude::*};
-use bevy_ecs_tilemap::prelude::*;
-
+pub(crate) use bevy::prelude::*;
+//use bevy_ecs_tilemap::prelude::*;
+use bevy::render::draw::OutsideFrustum;
 
 use std::collections::HashMap;
 
 mod camera_movement;
 pub mod pathing;
-
-
 
 pub struct GraphicsPlugin;
 
@@ -27,8 +25,8 @@ impl Plugin for GraphicsPlugin {
             title: String::from("game"),
             ..Default::default()
         })
-        .add_plugin(TilemapPlugin)
-        .add_plugin(TiledMapPlugin)
+        //.add_plugin(TilemapPlugin)
+        //.add_plugin(TiledMapPlugin)
         .add_system(animate_sprite_system.system())
         .add_startup_system(setup.system())
         .add_system(camera_movement::camera_movement.system());
@@ -37,28 +35,42 @@ impl Plugin for GraphicsPlugin {
 
 const TILE_WIDTH: f32 = 16.0;
 
-fn setup(
-    mut commands: Commands,
-    asset_server: Res<AssetServer>,
-) {
+fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     //Make the camera
     commands.spawn_bundle(OrthographicCameraBundle::new_2d());
-
-    //Make the map
-    let handle: Handle<TiledMap> = asset_server.load("maps/test.tmx");
-
-    let map_entity = commands.spawn().id();
-
-    commands.entity(map_entity).insert_bundle(TiledMapBundle {
-        tiled_map: handle,
-        map: Map::new(0u16, map_entity),
-        transform: Transform::from_xyz(0.0, 0.0, 0.0),
-        ..Default::default()
-    });
 }
 
-fn animate_sprite_system(mut query: Query<(&mut TextureAtlasSprite, &mut Transform, &pathing::Orientation, &pathing::Position)>) {
-    for (mut sprite, mut transform, orientation, position) in &mut query.iter_mut() {
+// pub fn camera_view_check(
+//     camera_query: Query<(&Transform, &OrthographicProjection), With<Camera>>,
+//     mut visible_query: Query<(&Transform, &mut Visible)>,
+// ) {
+//     const MAX_TILE_SIZE: f32 = 50.;
+//     for (camera_transform, projection) in camera_query.iter() {
+//         let camera_pos = camera_transform.translation;
+//         let scale = projection.scale;
+//         let left = projection.left * scale + camera_pos.x - MAX_TILE_SIZE;
+//         let right = projection.right * scale + camera_pos.x + MAX_TILE_SIZE;
+//         let bottom = projection.bottom * scale + camera_pos.y - MAX_TILE_SIZE;
+//         let top = projection.top * scale + camera_pos.y + MAX_TILE_SIZE;
+
+//         for (transform, mut visible) in visible_query.iter_mut() {
+//             let pos = transform.translation;
+//             visible.is_visible =
+//                 pos.x > left && pos.x < right &&
+//                 pos.y > bottom && pos.y < top;
+//         }
+//     }
+// }
+fn animate_sprite_system(
+    mut query: Query<(
+        &mut TextureAtlasSprite,
+        &mut Transform,
+        &pathing::Orientation,
+        &pathing::Position,
+        Without<OutsideFrustum>,
+    )>,
+) {
+    for (mut sprite, mut transform, orientation, position, _) in &mut query.iter_mut() {
         // Set sprite to match orientation
         match orientation.0 {
             pathing::Direction::Up => sprite.index = 5,
