@@ -12,6 +12,8 @@ use bevy::{
 use rand::Rng;
 use std::ops::RangeInclusive;
 
+use bevy_ecs_tilemap::prelude::*;
+
 extern crate engine;
 
 fn main() {
@@ -21,8 +23,8 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .add_plugin(engine::movement::GraphicsPlugin)
         .add_plugin(engine::movement::pathing::MovementPlugin)
-        .add_startup_system(add_roads.system())
         .add_startup_system(add_people.system())
+        .add_startup_system(add_roads.system())
         .add_system(inspect.system())
         .run();
 }
@@ -34,7 +36,7 @@ fn add_people(
 ) {
     let mut x = 0;
 
-    while x < 500 {
+    while x < 50 {
         let xrange = RangeInclusive::new(-90, 90);
         let yrange = xrange.clone();
         let mut rng = rand::thread_rng();
@@ -66,7 +68,7 @@ fn add_people(
         );
         x += 1;
     }
-    while x < 1000 {
+    while x < 100 {
         let xrange = RangeInclusive::new(-90, 90);
         let yrange = xrange.clone();
         let mut rng = rand::thread_rng();
@@ -102,27 +104,32 @@ fn add_people(
     println!("Spawned {} entities.", x);
 }
 
-fn add_roads(mut tilemap: ResMut<engine::movement::pathing::TileMap>) {
+fn add_roads(mut commands: Commands, mut map_query: MapQuery) {
+    //mut tilemap: ResMut<engine::movement::pathing::TileMap>) {
+    let mut new_tiles = engine::TileInit::default();
     for x in 0..4 {
         for y in 0..30 {
-            tilemap.map.insert(
-                engine::movement::pathing::Position { x: x, y: y },
-                engine::movement::pathing::Tile {
-                    occupied: false,
-                    ground_type: engine::movement::pathing::GroundType::Street,
-                },
-            );
+            new_tiles.tiles.push((0, engine::TilePos(x, y)));
+            // tilemap.map.insert(
+            //     engine::TilePos(x, y),
+            //     engine::movement::pathing::Tile {
+            //         occupied: false,
+            //         ground_type: engine::movement::pathing::GroundType::Street,
+            //     },
         }
     }
     for x in 0..4 {
-        tilemap.map.insert(
-            engine::movement::pathing::Position { x: x, y: 15 },
-            engine::movement::pathing::Tile {
-                occupied: false,
-                ground_type: engine::movement::pathing::GroundType::Crosswalk,
-            },
-        );
+        let y = 15;
+        new_tiles.tiles.push((0, engine::TilePos(x, y)));
+        // tilemap.map.insert(
+        //     engine::movement::pathing::Position { x: x, y: 15 },
+        //     engine::movement::pathing::Tile {
+        //         occupied: false,
+        //         ground_type: engine::movement::pathing::GroundType::Crosswalk,
+        //     },
+        // );
     }
+    engine::spawn_tiles(&mut map_query, &mut commands, new_tiles);
 }
 
 fn inspect(
