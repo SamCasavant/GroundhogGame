@@ -1,1 +1,8 @@
 /target
+/engine/target
+perf*
+Cargo.lock
+/engine/Cargo.lock
+.vscode
+.cargo
+/src/.vscode

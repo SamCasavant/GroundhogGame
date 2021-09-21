@@ -7,7 +7,7 @@ authors = ["Samuel Casavant <samuel.j.casavant@gmail.com>"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-bevy = { version = "0.5.0", features = ["dynamic"] }
+bevy = { version = "0.5.0"}#, features = ["dynamic"] }
 rand = "0.8.4" #Note: Rand will likely not be used in final deterministic release
 pathfinding = "2.0.4"
 bevy_ecs_tilemap = { git = "https://github.com/StarArawn/bevy_ecs_tilemap.git", features=["tiled_map"]}

@@ -4,7 +4,6 @@ This file should be an interface between the engine and external world building 
 */
 
 use bevy::prelude::*;
-
 pub mod movement;
 
 #[derive(Bundle)]
@@ -14,6 +13,7 @@ struct ActorComponents {
     identity: Identity,
     destination: movement::pathing::Destination,
 }
+
 
 pub fn spawn_actor(
     commands: &mut Commands,
@@ -33,6 +33,19 @@ pub fn spawn_actor(
         .insert(destination)
         .insert_bundle(sprite_sheet)
         .insert(Timer::from_seconds(0.1, true));
+}
+
+
+pub fn create_tile( 
+    tilemap: &mut ResMut<movement::pathing::TileMap>,
+    position: movement::pathing::Position, 
+    tile: movement::pathing::Tile
+) 
+{
+    tilemap.map.insert(
+        position,
+        tile
+    );
 }
 
 #[derive(Clone)]

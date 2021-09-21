@@ -15,7 +15,7 @@ use std::ops::RangeInclusive;
 extern crate engine;
 
 fn main() {
-    App::build()
+    let app = App::build()
         .add_plugin(FrameTimeDiagnosticsPlugin::default())
         .add_plugin(LogDiagnosticsPlugin::default())
         .add_plugins(DefaultPlugins)
@@ -105,23 +105,24 @@ fn add_people(
 fn add_roads(mut tilemap: ResMut<engine::movement::pathing::TileMap>) {
     for x in 0..4 {
         for y in 0..30 {
-            tilemap.map.insert(
-                engine::movement::pathing::Position { x: x, y: y },
+            engine::create_tile(
+                &mut tilemap,
+                engine::movement::pathing::Position { x: x, y: y }, 
                 engine::movement::pathing::Tile {
                     occupied: false,
                     ground_type: engine::movement::pathing::GroundType::Street,
-                },
-            );
+            })
         }
     }
     for x in 0..4 {
-        tilemap.map.insert(
-            engine::movement::pathing::Position { x: x, y: 15 },
+        let y = 15;
+        engine::create_tile(
+            &mut tilemap,
+            engine::movement::pathing::Position { x: x, y: y }, 
             engine::movement::pathing::Tile {
                 occupied: false,
                 ground_type: engine::movement::pathing::GroundType::Crosswalk,
-            },
-        );
+            });
     }
 }
 
