@@ -33,34 +33,13 @@ impl Plugin for GraphicsPlugin {
     }
 }
 
-const TILE_WIDTH: f32 = 16.0;
+const TILE_WIDTH: f32 = 64.0;
 
 fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     //Make the camera
     commands.spawn_bundle(OrthographicCameraBundle::new_2d());
 }
 
-// pub fn camera_view_check(
-//     camera_query: Query<(&Transform, &OrthographicProjection), With<Camera>>,
-//     mut visible_query: Query<(&Transform, &mut Visible)>,
-// ) {
-//     const MAX_TILE_SIZE: f32 = 50.;
-//     for (camera_transform, projection) in camera_query.iter() {
-//         let camera_pos = camera_transform.translation;
-//         let scale = projection.scale;
-//         let left = projection.left * scale + camera_pos.x - MAX_TILE_SIZE;
-//         let right = projection.right * scale + camera_pos.x + MAX_TILE_SIZE;
-//         let bottom = projection.bottom * scale + camera_pos.y - MAX_TILE_SIZE;
-//         let top = projection.top * scale + camera_pos.y + MAX_TILE_SIZE;
-
-//         for (transform, mut visible) in visible_query.iter_mut() {
-//             let pos = transform.translation;
-//             visible.is_visible =
-//                 pos.x > left && pos.x < right &&
-//                 pos.y > bottom && pos.y < top;
-//         }
-//     }
-// }
 fn animate_sprite_system(
     mut query: Query<(
         &mut TextureAtlasSprite,
@@ -107,7 +86,7 @@ pub fn init_sprite_sheet(
         position.y as f32 * TILE_WIDTH,
         0.0,
     );
-    let mut transform = Transform::from_scale(Vec3::splat(6.0));
+    let mut transform = Transform::from_scale(Vec3::splat(TILE_WIDTH / 3.0));
     transform.translation = translation;
     SpriteSheetBundle {
         texture_atlas: texture_atlas_handle,

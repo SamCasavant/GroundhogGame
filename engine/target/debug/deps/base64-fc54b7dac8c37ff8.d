@@ -1,0 +1,15 @@
+/home/sam/Projects/game/engine/target/debug/deps/base64-fc54b7dac8c37ff8.rmeta: /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/base64-0.13.0/src/lib.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/base64-0.13.0/src/chunked_encoder.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/base64-0.13.0/src/display.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/base64-0.13.0/src/read/mod.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/base64-0.13.0/src/read/decoder.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/base64-0.13.0/src/tables.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/base64-0.13.0/src/write/mod.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/base64-0.13.0/src/write/encoder.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/base64-0.13.0/src/write/encoder_string_writer.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/base64-0.13.0/src/encode.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/base64-0.13.0/src/decode.rs
+
+/home/sam/Projects/game/engine/target/debug/deps/base64-fc54b7dac8c37ff8.d: /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/base64-0.13.0/src/lib.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/base64-0.13.0/src/chunked_encoder.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/base64-0.13.0/src/display.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/base64-0.13.0/src/read/mod.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/base64-0.13.0/src/read/decoder.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/base64-0.13.0/src/tables.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/base64-0.13.0/src/write/mod.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/base64-0.13.0/src/write/encoder.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/base64-0.13.0/src/write/encoder_string_writer.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/base64-0.13.0/src/encode.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/base64-0.13.0/src/decode.rs
+
+/home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/base64-0.13.0/src/lib.rs:
+/home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/base64-0.13.0/src/chunked_encoder.rs:
+/home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/base64-0.13.0/src/display.rs:
+/home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/base64-0.13.0/src/read/mod.rs:
+/home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/base64-0.13.0/src/read/decoder.rs:
+/home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/base64-0.13.0/src/tables.rs:
+/home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/base64-0.13.0/src/write/mod.rs:
+/home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/base64-0.13.0/src/write/encoder.rs:
+/home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/base64-0.13.0/src/write/encoder_string_writer.rs:
+/home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/base64-0.13.0/src/encode.rs:
+/home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/base64-0.13.0/src/decode.rs:

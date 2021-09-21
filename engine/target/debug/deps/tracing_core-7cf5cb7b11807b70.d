@@ -1,0 +1,14 @@
+/home/sam/Projects/game/engine/target/debug/deps/tracing_core-7cf5cb7b11807b70.rmeta: /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/tracing-core-0.1.19/src/lib.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/tracing-core-0.1.19/src/callsite.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/tracing-core-0.1.19/src/dispatcher.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/tracing-core-0.1.19/src/event.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/tracing-core-0.1.19/src/field.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/tracing-core-0.1.19/src/metadata.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/tracing-core-0.1.19/src/parent.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/tracing-core-0.1.19/src/span.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/tracing-core-0.1.19/src/stdlib.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/tracing-core-0.1.19/src/subscriber.rs
+
+/home/sam/Projects/game/engine/target/debug/deps/tracing_core-7cf5cb7b11807b70.d: /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/tracing-core-0.1.19/src/lib.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/tracing-core-0.1.19/src/callsite.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/tracing-core-0.1.19/src/dispatcher.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/tracing-core-0.1.19/src/event.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/tracing-core-0.1.19/src/field.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/tracing-core-0.1.19/src/metadata.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/tracing-core-0.1.19/src/parent.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/tracing-core-0.1.19/src/span.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/tracing-core-0.1.19/src/stdlib.rs /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/tracing-core-0.1.19/src/subscriber.rs
+
+/home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/tracing-core-0.1.19/src/lib.rs:
+/home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/tracing-core-0.1.19/src/callsite.rs:
+/home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/tracing-core-0.1.19/src/dispatcher.rs:
+/home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/tracing-core-0.1.19/src/event.rs:
+/home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/tracing-core-0.1.19/src/field.rs:
+/home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/tracing-core-0.1.19/src/metadata.rs:
+/home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/tracing-core-0.1.19/src/parent.rs:
+/home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/tracing-core-0.1.19/src/span.rs:
+/home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/tracing-core-0.1.19/src/stdlib.rs:
+/home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/tracing-core-0.1.19/src/subscriber.rs:

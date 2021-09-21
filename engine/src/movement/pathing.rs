@@ -117,6 +117,7 @@ pub fn move_actor(
                 if tilemap.map.contains_key(&next_step) == true
                     && tilemap.map.get(&next_step).unwrap().occupied == true
                 {
+                    let mut cur_distance = (destination.0.x - position.x)^2 + (destination.0.y - position.y)^2;
                     next_step = *position;
                     let mut temp_steps = move_weights(&*position, &tilemap);
                     temp_steps.sort_by_key(|k| k.1);
@@ -124,14 +125,18 @@ pub fn move_actor(
                         if tilemap.map.contains_key(&step.0) == false
                             || tilemap.map.get(&step.0).unwrap().occupied == false
                         {
-                            if absdiff(destination.0.x, position.x)
+                            if (destination.0.x - (position.x + step.0.x))^2
+                                + (destination.0.y - (position.y + step.0.y))^2
+                                < cur_distance 
+                            /*absdiff(destination.0.x, position.x)
                                 - absdiff(destination.0.x, step.0.x)
                                 + absdiff(destination.0.y, position.y)
                                 - absdiff(destination.0.y, step.0.y)
-                                > 0
+                                > 0 */
                             {
+                                cur_distance = (destination.0.x - (position.x + step.0.x))^2
+                                + (destination.0.y - (position.y + step.0.y))^2;
                                 next_step = step.0;
-                                break;
                             }
                         }
                     }
