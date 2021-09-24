@@ -4,7 +4,6 @@ This file should be an interface between the engine and external world building 
 */
 
 use bevy::prelude::*;
-
 pub mod movement;
 
 pub use bevy_ecs_tilemap::prelude::*;
@@ -16,6 +15,7 @@ struct ActorComponents {
     identity: Identity,
     destination: movement::pathing::Destination,
 }
+
 
 pub fn spawn_actor(
     commands: &mut Commands,

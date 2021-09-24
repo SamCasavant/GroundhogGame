@@ -17,7 +17,7 @@ use bevy_ecs_tilemap::prelude::*;
 extern crate engine;
 
 fn main() {
-    App::build()
+    let app = App::build()
         .add_plugin(FrameTimeDiagnosticsPlugin::default())
         .add_plugin(LogDiagnosticsPlugin::default())
         .add_plugins(DefaultPlugins)
