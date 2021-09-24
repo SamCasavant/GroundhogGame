@@ -16,7 +16,6 @@ struct ActorComponents {
     destination: movement::pathing::Destination,
 }
 
-
 pub fn spawn_actor(
     commands: &mut Commands,
     identity: Identity,
@@ -38,22 +37,19 @@ pub fn spawn_actor(
 }
 
 #[derive(Default)]
-pub struct TileInit{
-    pub tiles: Vec<(u16, TilePos)>
+pub struct TileInit {
+    pub tiles: Vec<(u16, TilePos)>,
 }
 
-pub fn spawn_tiles(
-    map_query: &mut MapQuery, 
-    commands: &mut Commands,
-    tile_init: TileInit,
-) //Takes a vector of tiles; adds them to the map.
+pub fn spawn_tiles(map_query: &mut MapQuery, commands: &mut Commands, tile_init: TileInit)
+//Takes a vector of tiles; adds them to the map.
 {
     for tile in tile_init.tiles {
         let _ = map_query.set_tile(
             commands,
             tile.1,
             Tile {
-                texture_index: tile.0, 
+                texture_index: tile.0,
                 ..Default::default()
             },
             0u16,

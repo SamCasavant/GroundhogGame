@@ -4,9 +4,9 @@ The role of this module and its name will likely change during restructuring pro
 */
 
 pub(crate) use bevy::prelude::*;
+use bevy::render::draw::OutsideFrustum;
 use bevy_ecs_tilemap::prelude::*;
 use rand::{thread_rng, Rng};
-use bevy::render::draw::OutsideFrustum;
 
 use std::collections::HashMap;
 
@@ -43,10 +43,10 @@ struct LastUpdate {
 const TILE_WIDTH: f32 = 64.0;
 
 fn setup(
-    mut commands: Commands, 
+    mut commands: Commands,
     asset_server: Res<AssetServer>,
     mut materials: ResMut<Assets<ColorMaterial>>,
-    mut map_query: MapQuery
+    mut map_query: MapQuery,
 ) {
     //Make the camera
     commands.spawn_bundle(OrthographicCameraBundle::new_2d());
@@ -65,13 +65,8 @@ fn setup(
     );
     layer_settings.tile_spacing = Vec2::new(1.0, 1.0);
 
-    let (mut layer_builder, layer_entity) = LayerBuilder::<TileBundle>::new(
-        &mut commands,
-        layer_settings,
-        0u16,
-        0u16,
-        None,
-    );
+    let (mut layer_builder, layer_entity) =
+        LayerBuilder::<TileBundle>::new(&mut commands, layer_settings, 0u16, 0u16, None);
 
     let mut tile_bundle = TileBundle::default();
     tile_bundle.tile.texture_index = 963u16;
@@ -80,15 +75,29 @@ fn setup(
     layer_builder = build_vertical_road(
         layer_builder,
         TilePos(0, 0),
-        1, 
+        1,
         100,
         true,
-        Tile {texture_index: 788u16, ..Default::default()},
-       Tile{texture_index: 752u16, ..Default::default()},
-          Tile{texture_index: 749u16, ..Default::default()},
-          Tile{texture_index: 714u16, ..Default::default()},
-          Tile{texture_index: 22u16, ..Default::default()},
-
+        Tile {
+            texture_index: 788u16,
+            ..Default::default()
+        },
+        Tile {
+            texture_index: 752u16,
+            ..Default::default()
+        },
+        Tile {
+            texture_index: 749u16,
+            ..Default::default()
+        },
+        Tile {
+            texture_index: 714u16,
+            ..Default::default()
+        },
+        Tile {
+            texture_index: 22u16,
+            ..Default::default()
+        },
     );
 
     map_query.build_layer(&mut commands, layer_builder, material_handle);
@@ -100,12 +109,15 @@ fn setup(
     commands
         .entity(map_entity)
         .insert(map)
-        .insert(Transform::from_xyz(-128.0, -128.0, 0.0).mul_transform(Transform::from_scale(Vec3::splat(TILE_WIDTH / 16.0))))
+        .insert(
+            Transform::from_xyz(-128.0, -128.0, 0.0)
+                .mul_transform(Transform::from_scale(Vec3::splat(TILE_WIDTH / 16.0))),
+        )
         .insert(GlobalTransform::default());
 }
 
 fn build_vertical_road(
-    mut layer_builder: LayerBuilder<TileBundle>, 
+    mut layer_builder: LayerBuilder<TileBundle>,
     mut origin: TilePos,
     width: u8,
     length: u32,
@@ -115,14 +127,11 @@ fn build_vertical_road(
     center_tile: Tile,
     lane_tile: Tile,
     sidewalk_tile: Tile,
-) -> LayerBuilder<TileBundle>{
+) -> LayerBuilder<TileBundle> {
     if sidewalks {
         layer_builder.fill(
             origin,
-            TilePos(
-                origin.0 + 1,
-                origin.1 + length
-            ),
+            TilePos(origin.0 + 1, origin.1 + length),
             sidewalk_tile.into(),
         );
         origin = TilePos(origin.0 + 1, origin.1);
@@ -130,50 +139,35 @@ fn build_vertical_road(
 
     layer_builder.fill(
         origin,
-        TilePos(
-            origin.0 + 1,
-            origin.1 + length
-        ),
+        TilePos(origin.0 + 1, origin.1 + length),
         left_edge_tile.into(),
     );
     origin = TilePos(origin.0 + 1, origin.1);
 
     layer_builder.fill(
         origin,
-        TilePos(
-            origin.0 + 1,
-            origin.1 + length
-        ),
+        TilePos(origin.0 + 1, origin.1 + length),
         lane_tile.into(),
     );
     origin = TilePos(origin.0 + 1, origin.1);
 
     layer_builder.fill(
         origin,
-        TilePos(
-            origin.0 + 1,
-            origin.1 + length
-        ),
+        TilePos(origin.0 + 1, origin.1 + length),
         center_tile.into(),
     );
     origin = TilePos(origin.0 + 1, origin.1);
 
     layer_builder.fill(
         origin,
-        TilePos(
-            origin.0 + 1,
-            origin.1 + length
-        ),
+        TilePos(origin.0 + 1, origin.1 + length),
         lane_tile.into(),
     );
     origin = TilePos(origin.0 + 1, origin.1);
 
     layer_builder.fill(
         origin,
-        TilePos(
-            origin.0 + 1,
-            origin.1 + length
-        ),
+        TilePos(origin.0 + 1, origin.1 + length),
         right_edge_tile.into(),
     );
     origin = TilePos(origin.0 + 1, origin.1);
@@ -181,10 +175,7 @@ fn build_vertical_road(
     if sidewalks {
         layer_builder.fill(
             origin,
-            TilePos(
-                origin.0 + 1,
-                origin.1 + length
-            ),
+            TilePos(origin.0 + 1, origin.1 + length),
             sidewalk_tile.into(),
         );
         origin = TilePos(origin.0 + 1, origin.1);
@@ -201,7 +192,7 @@ fn build_vertical_road(
 //             commands,
 //             position,
 //             Tile {
-//                 texture_index: 0, 
+//                 texture_index: 0,
 //                 ..Default::default()
 //             },
 //             0u16,
@@ -250,8 +241,8 @@ fn animate_sprite_system(
         }
         //Move sprite to match position
         let translation = Vec3::new(
-            position.x as f32 * TILE_WIDTH + TILE_WIDTH/2.0,
-            position.y as f32 * TILE_WIDTH + TILE_WIDTH/2.0,
+            position.x as f32 * TILE_WIDTH + TILE_WIDTH / 2.0,
+            position.y as f32 * TILE_WIDTH + TILE_WIDTH / 2.0,
             1.0, //Layer
         );
         transform.translation = translation;
@@ -265,18 +256,12 @@ pub fn init_sprite_sheet(
     position: pathing::Position,
 ) -> SpriteSheetBundle {
     let texture_handle = asset_server.load(path);
-    let texture_atlas = TextureAtlas::from_grid(
-        texture_handle, 
-        Vec2::new(4.0, 4.0), 
-        4, 
-        4,
-    );
+    let texture_atlas = TextureAtlas::from_grid(texture_handle, Vec2::new(4.0, 4.0), 4, 4);
     let texture_atlas_handle = texture_atlases.add(texture_atlas);
 
-    
     let translation = Vec3::new(
-        position.x as f32 * (TILE_WIDTH) + TILE_WIDTH/2.0,
-        position.y as f32 * (TILE_WIDTH) + TILE_WIDTH/2.0,
+        position.x as f32 * (TILE_WIDTH) + TILE_WIDTH / 2.0,
+        position.y as f32 * (TILE_WIDTH) + TILE_WIDTH / 2.0,
         -1.0, //Layer
     );
     let mut transform = Transform::from_scale(Vec3::splat(TILE_WIDTH / 3.0));
