@@ -58,11 +58,13 @@ fn setup(
     let mut map = Map::new(0u16, map_entity);
 
     let mut layer_settings = LayerSettings::new(
-        MapSize(2, 2),
-        ChunkSize(1, 1),
+        MapSize(4, 4),
+        ChunkSize(32, 32),
         TileSize(16.0, 16.0),
-        TextureSize(592.0, 448.0),
+        TextureSize(628.0, 475.0),
     );
+    layer_settings.tile_spacing = Vec2::new(1.0, 1.0);
+
     let (mut layer_builder, layer_entity) = LayerBuilder::<TileBundle>::new(
         &mut commands,
         layer_settings,
@@ -75,6 +77,19 @@ fn setup(
     tile_bundle.tile.texture_index = 963u16;
 
     layer_builder.set_all(tile_bundle);
+    layer_builder = build_vertical_road(
+        layer_builder,
+        TilePos(0, 0),
+        1, 
+        100,
+        true,
+        Tile {texture_index: 788u16, ..Default::default()},
+       Tile{texture_index: 752u16, ..Default::default()},
+          Tile{texture_index: 749u16, ..Default::default()},
+          Tile{texture_index: 714u16, ..Default::default()},
+          Tile{texture_index: 22u16, ..Default::default()},
+
+    );
 
     map_query.build_layer(&mut commands, layer_builder, material_handle);
 
@@ -85,8 +100,97 @@ fn setup(
     commands
         .entity(map_entity)
         .insert(map)
-        .insert(Transform::from_xyz(-128.0, -128.0, 0.0).mul_transform(Transform::from_scale(Vec3::splat(TILE_WIDTH/16.0))))
+        .insert(Transform::from_xyz(-128.0, -128.0, 0.0).mul_transform(Transform::from_scale(Vec3::splat(TILE_WIDTH / 16.0))))
         .insert(GlobalTransform::default());
+}
+
+fn build_vertical_road(
+    mut layer_builder: LayerBuilder<TileBundle>, 
+    mut origin: TilePos,
+    width: u8,
+    length: u32,
+    sidewalks: bool,
+    left_edge_tile: Tile,
+    right_edge_tile: Tile,
+    center_tile: Tile,
+    lane_tile: Tile,
+    sidewalk_tile: Tile,
+) -> LayerBuilder<TileBundle>{
+    if sidewalks {
+        layer_builder.fill(
+            origin,
+            TilePos(
+                origin.0 + 1,
+                origin.1 + length
+            ),
+            sidewalk_tile.into(),
+        );
+        origin = TilePos(origin.0 + 1, origin.1);
+    }
+
+    layer_builder.fill(
+        origin,
+        TilePos(
+            origin.0 + 1,
+            origin.1 + length
+        ),
+        left_edge_tile.into(),
+    );
+    origin = TilePos(origin.0 + 1, origin.1);
+
+    layer_builder.fill(
+        origin,
+        TilePos(
+            origin.0 + 1,
+            origin.1 + length
+        ),
+        lane_tile.into(),
+    );
+    origin = TilePos(origin.0 + 1, origin.1);
+
+    layer_builder.fill(
+        origin,
+        TilePos(
+            origin.0 + 1,
+            origin.1 + length
+        ),
+        center_tile.into(),
+    );
+    origin = TilePos(origin.0 + 1, origin.1);
+
+    layer_builder.fill(
+        origin,
+        TilePos(
+            origin.0 + 1,
+            origin.1 + length
+        ),
+        lane_tile.into(),
+    );
+    origin = TilePos(origin.0 + 1, origin.1);
+
+    layer_builder.fill(
+        origin,
+        TilePos(
+            origin.0 + 1,
+            origin.1 + length
+        ),
+        right_edge_tile.into(),
+    );
+    origin = TilePos(origin.0 + 1, origin.1);
+
+    if sidewalks {
+        layer_builder.fill(
+            origin,
+            TilePos(
+                origin.0 + 1,
+                origin.1 + length
+            ),
+            sidewalk_tile.into(),
+        );
+        origin = TilePos(origin.0 + 1, origin.1);
+    }
+
+    layer_builder
 }
 
 // fn build_map(map_query: &mut MapQuery, commands: &mut Commands) {
@@ -173,7 +277,7 @@ pub fn init_sprite_sheet(
     let translation = Vec3::new(
         position.x as f32 * (TILE_WIDTH) + TILE_WIDTH/2.0,
         position.y as f32 * (TILE_WIDTH) + TILE_WIDTH/2.0,
-        1.0, //Layer
+        -1.0, //Layer
     );
     let mut transform = Transform::from_scale(Vec3::splat(TILE_WIDTH / 3.0));
     transform.translation = translation;
