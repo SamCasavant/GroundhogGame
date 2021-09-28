@@ -363,6 +363,7 @@ dependencies = [
 [[package]]
 name = "bevy_ecs_tilemap"
 version = "0.4.0"
+source = "git+https://github.com/StarArawn/bevy_ecs_tilemap.git#83a8599feeb7c38f0cd66803483bcdb09894e6b1"
 dependencies = [
  "anyhow",
  "bevy",
@@ -1234,6 +1235,8 @@ version = "0.1.0"
 dependencies = [
  "bevy",
  "bevy_ecs_tilemap",
+ "log",
+ "morton-encoding",
  "pathfinding",
  "rand",
 ]

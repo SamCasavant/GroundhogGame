@@ -16,49 +16,22 @@ Integrate tile system with bevy_ECS_tiles
 
 pub(crate) use bevy::prelude::*;
 
-extern crate pathfinding;
-use pathfinding::prelude::{absdiff, astar};
-
 use std::collections::HashMap;
-use std::convert::TryInto;
 use std::ops::RangeInclusive;
 
 use rand::Rng;
 
+extern crate pathfinding;
+use pathfinding::prelude::absdiff;
+
+use crate::world;
 pub struct Orientation(pub Direction);
-
-#[derive(Debug, Copy, Clone, PartialEq, Hash, Eq)]
-pub struct Position {
-    pub x: i64,
-    pub y: i64,
-}
-
-pub struct Path(pub Vec<Position>);
 
 #[derive(Default)]
 struct PlannedSteps {
-    steps: HashMap<Position, bevy::prelude::Entity>,
+    steps: HashMap<world::Position, bevy::prelude::Entity>,
 }
 
-#[derive(Debug, Copy, Clone)]
-pub struct Destination(pub Position);
-
-impl PartialEq<Position> for Destination {
-    fn eq(&self, other: &Position) -> bool {
-        self.0.x == other.x && self.0.y == other.y
-    }
-}
-
-#[derive(Debug)]
-pub enum GroundType {
-    ShortGrass,
-    TallGrass,
-    Sidewalk,
-    Path,
-    Street,
-    Crosswalk,
-    Obstacle,
-}
 #[derive(Debug, Copy, Clone, PartialEq, Hash, Eq)]
 pub enum Direction {
     Up,
@@ -71,44 +44,36 @@ pub enum Direction {
     Right,
 }
 
-#[derive(Debug)]
-pub struct Tile {
-    pub occupied: bool,
-    pub ground_type: GroundType,
-}
-#[derive(Default)]
-pub struct TileMap {
-    pub map: HashMap<Position, Tile>,
-}
-
 pub struct MovementPlugin;
 
 impl Plugin for MovementPlugin {
     fn build(&self, app: &mut AppBuilder) {
         app.insert_resource(PlannedSteps {
-            steps: HashMap::<Position, bevy::prelude::Entity>::new(),
+            steps: HashMap::<world::Position, bevy::prelude::Entity>::new(),
         })
         .add_system(move_actor.system());
     }
 }
 
 pub fn move_actor(
-    mut tilemap: ResMut<TileMap>,
+    mut tilemap: ResMut<world::TileMap>,
     time: Res<Time>,
+    mut commands: Commands,
     mut query: Query<(
+        Entity,
         &mut Timer,
-        &mut Position,
+        &mut world::Position,
         &mut Orientation,
-        &mut Destination,
-        &mut Path,
+        &mut world::Destination,
+        &mut world::Path,
     )>,
 ) {
-    for (mut timer, mut position, mut orientation, mut destination, mut path) in
+    for (entity, mut timer, mut position, mut orientation, mut destination, mut path) in
         &mut query.iter_mut()
     {
         timer.tick(time.delta());
         if path.0.len() < 1 {
-            *path = plan_path(*position, *destination, &tilemap);
+            commands.entity(entity).remove::<world::Path>();
         }
         if timer.just_finished() {
             if path.0.len() > 0 {
@@ -117,25 +82,23 @@ pub fn move_actor(
                 if tilemap.map.contains_key(&next_step) == true
                     && tilemap.map.get(&next_step).unwrap().occupied == true
                 {
-                    let mut cur_distance = (destination.0.x - position.x)^2 + (destination.0.y - position.y)^2;
+                    let mut cur_distance =
+                        (destination.0.x - position.x) ^ 2 + (destination.0.y - position.y) ^ 2;
                     next_step = *position;
-                    let mut temp_steps = move_weights(&*position, &tilemap);
+                    let mut temp_steps = world::move_weights(&*position, &tilemap);
                     temp_steps.sort_by_key(|k| k.1);
                     for step in temp_steps.iter() {
                         if tilemap.map.contains_key(&step.0) == false
                             || tilemap.map.get(&step.0).unwrap().occupied == false
                         {
-                            if (destination.0.x - (position.x + step.0.x))^2
-                                + (destination.0.y - (position.y + step.0.y))^2
-                                < cur_distance 
-                            /*absdiff(destination.0.x, position.x)
-                                - absdiff(destination.0.x, step.0.x)
-                                + absdiff(destination.0.y, position.y)
-                                - absdiff(destination.0.y, step.0.y)
-                                > 0 */
+                            if (destination.0.x - (position.x + step.0.x))
+                                ^ 2 + (destination.0.y - (position.y + step.0.y))
+                                ^ 2
+                                < cur_distance
                             {
-                                cur_distance = (destination.0.x - (position.x + step.0.x))^2
-                                + (destination.0.y - (position.y + step.0.y))^2;
+                                cur_distance = (destination.0.x - (position.x + step.0.x))
+                                    ^ 2 + (destination.0.y - (position.y + step.0.y))
+                                    ^ 2;
                                 next_step = step.0;
                             }
                         }
@@ -163,34 +126,34 @@ pub fn move_actor(
                         //(If the corrections above found an alternate move)
                         //If we've moved off of our path, we'll need to get a new one on the next loop.
                         //(This should be changed to only if we cannot immediately rejoin path.)
-                        *path = Path(Vec::new());
+                        commands.entity(entity).remove::<world::Path>();
                     }
                 } else {
                     path.0.remove(0);
                 }
 
                 match next_step {
-                    Position { x: 1, .. } => *orientation = Orientation(Direction::Up),
-                    Position { x: -1, .. } => *orientation = Orientation(Direction::Down),
-                    Position { y: 1, .. } => *orientation = Orientation(Direction::Right),
-                    Position { y: -1, .. } => *orientation = Orientation(Direction::Left),
+                    world::Position { x: 1, .. } => *orientation = Orientation(Direction::Up),
+                    world::Position { x: -1, .. } => *orientation = Orientation(Direction::Down),
+                    world::Position { y: 1, .. } => *orientation = Orientation(Direction::Right),
+                    world::Position { y: -1, .. } => *orientation = Orientation(Direction::Left),
                     _ => (),
                 }
-                let mut tile = tilemap.map.entry(*position).or_insert(Tile {
-                    ground_type: GroundType::Path,
+                let mut tile = tilemap.map.entry(*position).or_insert(world::Tile {
+                    ground_type: world::GroundType::Path,
                     occupied: false,
                 });
                 tile.occupied = false;
                 *position = next_step;
-                tile = tilemap.map.entry(*position).or_insert(Tile {
-                    ground_type: GroundType::Path,
+                tile = tilemap.map.entry(*position).or_insert(world::Tile {
+                    ground_type: world::GroundType::Path,
                     occupied: true,
                 });
                 tile.occupied = true;
             }
             if *destination == *position {
                 //TODO: Move destination changes to higher level module, derandomize. This will likely involve an 'at_destination component'.
-                let xrange = RangeInclusive::new(-15, 15);
+                let xrange = RangeInclusive::new(0, 100);
                 let yrange = xrange.clone();
                 let mut rng = rand::thread_rng();
                 destination.0.x = rng.gen_range(xrange);
@@ -198,63 +161,4 @@ pub fn move_actor(
             }
         }
     }
-}
-
-fn plan_path(position: Position, destination: Destination, tilemap: &ResMut<TileMap>) -> Path {
-    let plan = astar(
-        &position,
-        |p| move_weights(p, tilemap),
-        |p| {
-            (absdiff(p.x, destination.0.x) + absdiff(p.y, destination.0.y))
-                .try_into()
-                .unwrap()
-        },
-        |p| *p == destination.0,
-    );
-    if let Some(p) = plan {
-        let mut path = p.0;
-        path.remove(0);
-        if path.len() > 0 {
-            return Path(path);
-        }
-    }
-    let mut path = Vec::new();
-    path.push(position);
-    return Path(path);
-}
-
-fn move_weights(position: &Position, tilemap: &ResMut<TileMap>) -> Vec<(Position, u32)> {
-    let &Position { x, y } = position;
-    let mut weights = Vec::<(Position, u32)>::new();
-    for next_x in [-1, 0, 1].iter() {
-        for next_y in [-1, 0, 1].iter() {
-            let next_position = Position {
-                x: x + next_x,
-                y: y + next_y,
-            };
-            let tile_weight = tile_weight(next_position, tilemap);
-            if tile_weight != u32::MAX {
-                weights.push((next_position, tile_weight));
-            }
-        }
-    }
-    return weights;
-}
-
-fn tile_weight(position: Position, tilemap: &ResMut<TileMap>) -> u32 {
-    let mut weight = 1;
-    if tilemap.map.contains_key(&position) {
-        match tilemap.map.get(&position).unwrap() {
-            Tile {
-                ground_type: GroundType::Obstacle,
-                ..
-            } => weight = u32::MAX,
-            Tile {
-                ground_type: GroundType::Street,
-                ..
-            } => weight = 10,
-            _ => weight = 1,
-        }
-    }
-    weight
 }

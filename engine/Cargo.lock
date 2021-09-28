@@ -363,7 +363,7 @@ dependencies = [
 [[package]]
 name = "bevy_ecs_tilemap"
 version = "0.4.0"
-source = "git+https://github.com/StarArawn/bevy_ecs_tilemap.git#989fd7dd91232b217135a8d9e3b3559d0ce02657"
+source = "git+https://github.com/StarArawn/bevy_ecs_tilemap.git#83a8599feeb7c38f0cd66803483bcdb09894e6b1"
 dependencies = [
  "anyhow",
  "bevy",
@@ -1233,10 +1233,15 @@ checksum = "e78d4f1cc4ae33bbfc157ed5d5a5ef3bc29227303d595861deb238fcec4e9457"
 name = "engine"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "bevy",
  "bevy_ecs_tilemap",
+ "log",
+ "morton-encoding",
  "pathfinding",
  "rand",
+ "serde_json",
+ "tiled",
 ]
 
 [[package]]
