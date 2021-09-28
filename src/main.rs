@@ -17,15 +17,18 @@ use bevy_ecs_tilemap::prelude::*;
 extern crate engine;
 
 fn main() {
-    let app = App::build()
+    App::build()
         .add_plugin(FrameTimeDiagnosticsPlugin::default())
         .add_plugin(LogDiagnosticsPlugin::default())
         .add_plugins(DefaultPlugins)
         .add_plugin(engine::movement::GraphicsPlugin)
-        .add_plugin(engine::movement::pathing::MovementPlugin)
+        .add_plugin(engine::movement::movement::MovementPlugin)
+        .add_plugin(engine::world::WorldPlugin)
+        .add_plugin(TilemapPlugin)
+        .add_plugin(TiledMapPlugin)
         .add_startup_system(add_people.system())
-        .add_startup_system(add_roads.system())
         .add_system(inspect.system())
+        .add_system(new_destination.system())
         .run();
 }
 
@@ -37,18 +40,14 @@ fn add_people(
     let mut x = 0;
 
     while x < 50 {
-        let xrange = RangeInclusive::new(-90, 90);
+        let xrange = RangeInclusive::new(0, 180);
         let yrange = xrange.clone();
         let mut rng = rand::thread_rng();
-        let position = engine::movement::pathing::Position {
+        let position = engine::world::Position {
             x: rng.gen_range(xrange),
             y: rng.gen_range(yrange),
         };
-        let destination =
-            engine::movement::pathing::Destination(engine::movement::pathing::Position {
-                x: 30,
-                y: 0,
-            });
+        let destination = engine::world::Destination(engine::world::Position { x: 60, y: 0 });
 
         let sprite_sheet = engine::movement::init_sprite_sheet(
             &"sprites/NPC1 (2).png".to_string(),
@@ -72,16 +71,12 @@ fn add_people(
         let xrange = RangeInclusive::new(-90, 90);
         let yrange = xrange.clone();
         let mut rng = rand::thread_rng();
-        let position = engine::movement::pathing::Position {
+        let position = engine::world::Position {
             x: rng.gen_range(xrange),
             y: rng.gen_range(yrange),
         };
 
-        let destination =
-            engine::movement::pathing::Destination(engine::movement::pathing::Position {
-                x: -30,
-                y: 0,
-            });
+        let destination = engine::world::Destination(engine::world::Position { x: 0, y: 0 });
 
         let sprite_sheet = engine::movement::init_sprite_sheet(
             &"sprites/NPC1 (2).png".to_string(),
@@ -104,32 +99,17 @@ fn add_people(
     println!("Spawned {} entities.", x);
 }
 
-fn add_roads(mut commands: Commands, mut map_query: MapQuery) {
-    //mut tilemap: ResMut<engine::movement::pathing::TileMap>) {
-    let mut new_tiles = engine::TileInit::default();
-    for x in 0..4 {
-        for y in 0..30 {
-            new_tiles.tiles.push((0, engine::TilePos(x, y)));
-            // tilemap.map.insert(
-            //     engine::TilePos(x, y),
-            //     engine::movement::pathing::Tile {
-            //         occupied: false,
-            //         ground_type: engine::movement::pathing::GroundType::Street,
-            //     },
-        }
+//This will be replaced by an agent module in the near future
+fn new_destination(mut commands: Commands, query: Query<Entity, (With<engine::world::Position>, Without<engine::world::Destination>)>){
+    for entity in query.iter() {
+        let xrange = RangeInclusive::new(0, 100);
+        let yrange = xrange.clone();
+        let mut rng = rand::thread_rng();
+        let x = rng.gen_range(xrange);
+        let y = rng.gen_range(yrange);
+        let destination = engine::world::Destination(engine::world::Position{x: x, y: y});
+        commands.entity(entity).insert(destination);
     }
-    for x in 0..4 {
-        let y = 15;
-        new_tiles.tiles.push((0, engine::TilePos(x, y)));
-        // tilemap.map.insert(
-        //     engine::movement::pathing::Position { x: x, y: 15 },
-        //     engine::movement::pathing::Tile {
-        //         occupied: false,
-        //         ground_type: engine::movement::pathing::GroundType::Crosswalk,
-        //     },
-        // );
-    }
-    engine::spawn_tiles(&mut map_query, &mut commands, new_tiles);
 }
 
 fn inspect(
