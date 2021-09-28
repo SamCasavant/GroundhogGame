@@ -28,8 +28,8 @@ pub fn spawn_actor(
         .spawn()
         .insert(identity)
         .insert(position)
-        .insert(movement::pathing::Orientation(
-            movement::pathing::Direction::Down,
+        .insert(movement::movement::Orientation(
+            movement::movement::Direction::Down,
         ))
         .insert(destination)
         .insert_bundle(sprite_sheet)

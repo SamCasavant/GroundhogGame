@@ -1,4 +1,18 @@
-//Note: Support for bevy_ecs_tilemap/tiled_map to be deprecated in future
+/*
+Draws the world map and handles pathfinding
+
+Drawing:
+Uses bevy_ecs_tilemap to draw tiles on screen.
+Note: Support for bevy_ecs_tilemap/tiled_map to be deprecated in future
+
+Pathfinding:
+Entities with a Position and Destinations component, but without a Path component use this module to generate a path.
+Paths are initialized in full using aStar.
+Paths are stored in the Path component (a vector of positions) and 
+Ground Types are used to produce tile weights, which hopefully can encourage aStar to prefer sidewalks over roads.
+Note: This may not be deterministic, and needs to be. Consider invoking bevy stages.
+
+*/
 
 use bevy::prelude::*;
 use bevy_ecs_tilemap::prelude::*;
@@ -65,6 +79,8 @@ impl Plugin for WorldPlugin {
 }
 
 fn init_tilemaps(mut commands: Commands, asset_server: Res<AssetServer>) {
+    commands.spawn_bundle(OrthographicCameraBundle::new_2d());
+    
     let handle: Handle<TiledMap> = asset_server.load("maps/test.tmx");
 
     let map_entity = commands.spawn().id();

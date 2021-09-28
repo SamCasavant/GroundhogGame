@@ -1,9 +1,8 @@
 /*
-Entities with a Path component use this module to pathfind and proceed through steps in their path.
-Paths are initialized in full using aStar.
-Paths are stored in the Path component (a vector of positions) and elements are shifted off when a step is taken.
 The move_actor function handles final adjustments to the path in the event of a potential collision with another entity.
-Ground Types are used to produce tile weights, which hopefully can encourage aStar to prefer sidewalks over roads.
+It acts on entities with a position, destination, and path (vector of positions).
+Positions are shifted off of the path when a step is taken. When the path is completed or needs to be regenerated, the component is removed.
+crate::world::plan_path() produces a new path for entities that have none.
 
 TODO:
 Allow actors to rejoin path rather than starting over in the event of a correction.
@@ -16,21 +15,11 @@ Integrate tile system with bevy_ECS_tiles
 
 pub(crate) use bevy::prelude::*;
 
-use std::collections::HashMap;
-use std::ops::RangeInclusive;
-
-use rand::Rng;
-
 extern crate pathfinding;
 use pathfinding::prelude::absdiff;
 
 use crate::world;
 pub struct Orientation(pub Direction);
-
-#[derive(Default)]
-struct PlannedSteps {
-    steps: HashMap<world::Position, bevy::prelude::Entity>,
-}
 
 #[derive(Debug, Copy, Clone, PartialEq, Hash, Eq)]
 pub enum Direction {
@@ -48,9 +37,7 @@ pub struct MovementPlugin;
 
 impl Plugin for MovementPlugin {
     fn build(&self, app: &mut AppBuilder) {
-        app.insert_resource(PlannedSteps {
-            steps: HashMap::<world::Position, bevy::prelude::Entity>::new(),
-        })
+        app
         .add_system(move_actor.system());
     }
 }
@@ -68,7 +55,7 @@ pub fn move_actor(
         &mut world::Path,
     )>,
 ) {
-    for (entity, mut timer, mut position, mut orientation, mut destination, mut path) in
+    for (entity, mut timer, mut position, mut orientation, destination, mut path) in
         &mut query.iter_mut()
     {
         timer.tick(time.delta());
@@ -152,12 +139,8 @@ pub fn move_actor(
                 tile.occupied = true;
             }
             if *destination == *position {
-                //TODO: Move destination changes to higher level module, derandomize. This will likely involve an 'at_destination component'.
-                let xrange = RangeInclusive::new(0, 100);
-                let yrange = xrange.clone();
-                let mut rng = rand::thread_rng();
-                destination.0.x = rng.gen_range(xrange);
-                destination.0.y = rng.gen_range(yrange);
+                commands.entity(entity).remove::<world::Destination>();
+
             }
         }
     }

@@ -35,11 +35,10 @@ pub fn camera_movement(
         if transform.scale.x < 1.0 {
             transform.scale = Vec3::splat(1.0)
         }
-
-        //Add world bounds
-        //TODO: Replace hardcoded values with references to Window
+        direction = direction * transform.scale.x;
+        //Add world bounds (Temporary until camera follows player)
         let mut planned_translation =
-            transform.translation + time.delta_seconds() * direction * 500.0;
+            transform.translation + time.delta_seconds() * direction * 200.0;
         let out_of_bounds_x = transform.scale.x * 250.0 - planned_translation.x;
         let out_of_bounds_y = transform.scale.y * 250.0 - planned_translation.y;
 

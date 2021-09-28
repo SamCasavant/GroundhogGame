@@ -17,17 +17,18 @@ use bevy_ecs_tilemap::prelude::*;
 extern crate engine;
 
 fn main() {
-    let app = App::build()
+    App::build()
         .add_plugin(FrameTimeDiagnosticsPlugin::default())
         .add_plugin(LogDiagnosticsPlugin::default())
         .add_plugins(DefaultPlugins)
         .add_plugin(engine::movement::GraphicsPlugin)
-        .add_plugin(engine::movement::pathing::MovementPlugin)
+        .add_plugin(engine::movement::movement::MovementPlugin)
         .add_plugin(engine::world::WorldPlugin)
         .add_plugin(TilemapPlugin)
         .add_plugin(TiledMapPlugin)
         .add_startup_system(add_people.system())
         .add_system(inspect.system())
+        .add_system(new_destination.system())
         .run();
 }
 
@@ -96,6 +97,19 @@ fn add_people(
         x += 1;
     }
     println!("Spawned {} entities.", x);
+}
+
+//This will be replaced by an agent module in the near future
+fn new_destination(mut commands: Commands, query: Query<Entity, (With<engine::world::Position>, Without<engine::world::Destination>)>){
+    for entity in query.iter() {
+        let xrange = RangeInclusive::new(0, 100);
+        let yrange = xrange.clone();
+        let mut rng = rand::thread_rng();
+        let x = rng.gen_range(xrange);
+        let y = rng.gen_range(yrange);
+        let destination = engine::world::Destination(engine::world::Position{x: x, y: y});
+        commands.entity(entity).insert(destination);
+    }
 }
 
 fn inspect(
