@@ -37,8 +37,7 @@ pub struct MovementPlugin;
 
 impl Plugin for MovementPlugin {
     fn build(&self, app: &mut AppBuilder) {
-        app
-        .add_system(move_actor.system());
+        app.add_system(move_actor.system());
     }
 }
 
@@ -140,7 +139,6 @@ pub fn move_actor(
             }
             if *destination == *position {
                 commands.entity(entity).remove::<world::Destination>();
-
             }
         }
     }

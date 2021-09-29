@@ -5,7 +5,9 @@ This file should be an interface between the engine and external world building 
 
 use bevy::prelude::*;
 pub mod movement;
-pub mod world; // When people run in circles it's a very, very
+// When pub people run in pub circles it's a very, very
+pub mod world; 
+pub mod actor;
 
 pub use bevy_ecs_tilemap::prelude::*;
 

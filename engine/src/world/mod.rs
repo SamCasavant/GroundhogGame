@@ -8,7 +8,7 @@ Note: Support for bevy_ecs_tilemap/tiled_map to be deprecated in future
 Pathfinding:
 Entities with a Position and Destinations component, but without a Path component use this module to generate a path.
 Paths are initialized in full using aStar.
-Paths are stored in the Path component (a vector of positions) and 
+Paths are stored in the Path component (a vector of positions) and
 Ground Types are used to produce tile weights, which hopefully can encourage aStar to prefer sidewalks over roads.
 Note: This may not be deterministic, and needs to be. Consider invoking bevy stages.
 
@@ -22,6 +22,7 @@ use std::convert::TryInto;
 
 extern crate pathfinding;
 use pathfinding::prelude::{absdiff, astar};
+pub mod time;
 
 pub struct Path(pub Vec<Position>);
 
@@ -64,9 +65,12 @@ pub struct WorldPlugin;
 
 impl Plugin for WorldPlugin {
     fn build(&self, app: &mut AppBuilder) {
-        app.insert_resource(TileMap {
+        app
+        //Tilemap
+        .insert_resource(TileMap {
             map: HashMap::<Position, Tile>::new(),
         })
+        //Window
         .insert_resource(WindowDescriptor {
             width: 1270.0,
             height: 720.0,
@@ -74,13 +78,14 @@ impl Plugin for WorldPlugin {
             ..Default::default()
         })
         .add_startup_system(init_tilemaps.system())
-        .add_system(plan_path.system());
+        .add_system(plan_path.system())
+        .add_plugin(time::TimePlugin);
     }
 }
 
 fn init_tilemaps(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.spawn_bundle(OrthographicCameraBundle::new_2d());
-    
+
     let handle: Handle<TiledMap> = asset_server.load("maps/test.tmx");
 
     let map_entity = commands.spawn().id();
