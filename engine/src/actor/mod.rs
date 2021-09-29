@@ -2,35 +2,40 @@ use bevy::prelude::*;
 use crate::world;
 
 pub struct Routine{
-    tasks: Option<Vec<(Task, Time)>, None>
+    tasks: Option<Vec<ScheduledTask>>
 }
 
+pub struct ScheduledTask{
+    task: Task,
+    time: world::time::GameTime
+}
+
+#[derive(Copy, Clone)]
 pub struct Task{
     action: Action,
     parameters: ActionParameters,
     priority: u32
 }
 
+#[derive(Copy, Clone)]
 pub enum Action{
     Wait,
     Eat,
 }
 
-#[derive(Default)]
+#[derive(Default, Copy, Clone)]
 pub struct ActionParameters{
-    location: Option<world::Position, None>,
-    target: Option<Entity, None>
+    location: Option<world::Position>,
+    target: Option<Entity>
 }
 
 pub struct Intelligent; //Intelligent actor component
 
 pub struct NeedsTask; //Component to mark entities for task initialization
 
-pub struct Priority(u32); //Wrapper for code clarity
-
-pub struct Status{
-    hunger: Priority(u32),
-    laziness: Priority(u32), //Actor will prefer inaction over actions with lower priority than laziness
+pub struct Status{ //Used for keeping track of actor state, values are primarily used for priority of subsequent action
+    hunger: u32,
+    laziness: u32, //Actor will prefer inaction over actions with lower priority than laziness
 }
 
 pub struct ActorPlugin;
@@ -46,26 +51,29 @@ impl Plugin for ActorPlugin {
 
 fn choose_next_task(
     mut commands: Commands, 
-    query: Query<
+    mut query: Query<
         (Entity, 
         &Status, 
         &Routine), 
-        With<Intelligent>, 
-        Without<HasTask>>)
+        (With<Intelligent>, 
+        Without<Task>)>,
+    time: Res<world::time::GameTime>,)
 {
     for (entity, status, routine) in query.iter_mut(){
-        let mut curtask = Task{action: Action::Wait, parameters: ActionParameters(Default::default()), priority: Priority(status.laziness)};
-        match routine {
-            Some(task) => { 
-                let priority = Priority(min(task[0].1 - CURRENT_TIME, 0));
+        let mut curtask = Task{action: Action::Wait, parameters: ActionParameters{..Default::default()}, priority: status.laziness};
+        //TODO: Change priority calculation for scheduled events to incorporate eta
+        match &routine.tasks {
+            Some(tasks) => { 
+                let priority = time.how_soon(tasks[0].time); 
                 if priority > curtask.priority {
-                    curtask = task[0];
+                    curtask = tasks[0].task.clone();
             }},
             None => todo!(),
         }
         if status.hunger > curtask.priority {
-            curtask = Task{action: Action::Eat, parameters: ActionParameters(Default::default()), priority: Priority(status.hunger)}
+            curtask = Task{action: Action::Eat, parameters: ActionParameters{..Default::default()}, priority: status.hunger}
         }
+        commands.entity(entity).insert(curtask);
 
     }
 
@@ -76,7 +84,7 @@ struct Animal; //Component marker for animals (including humans)
 struct AnimalTimer(Timer);
 
 fn animal_processes( //Updates animal-inherent statuses; hunger, thirst, etc.
-    query: Query<(&Status), With<Animal>>,
+    mut query: Query<&mut Status, With<Animal>>,
     time: Res<Time>,
     mut timer: ResMut<AnimalTimer>
 ){
