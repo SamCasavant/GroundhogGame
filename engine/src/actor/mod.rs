@@ -31,8 +31,6 @@ pub struct ActionParameters{
 
 pub struct Intelligent; //Intelligent actor component
 
-pub struct NeedsTask; //Component to mark entities for task initialization
-
 pub struct Status{ //Used for keeping track of actor state, values are primarily used for priority of subsequent action
     hunger: u32,
     laziness: u32, //Actor will prefer inaction over actions with lower priority than laziness
@@ -43,7 +41,7 @@ pub struct ActorPlugin;
 impl Plugin for ActorPlugin {
     fn build(&self, app: &mut AppBuilder) {
         app
-        .insert_resource(AnimalTimer(Timer::from_seconds(5.0, true)))
+        .insert_resource(AnimalTimer(world::time::GameTime::from_stamp(world::time::Stamp{day: 0, hour: 6, minute: 0, second: 0})))
         .add_system(animal_processes.system().label("preparation"))
         .add_system(choose_next_task.system().label("planning"));
     }
@@ -81,17 +79,19 @@ fn choose_next_task(
 
 struct Animal; //Component marker for animals (including humans)
 
-struct AnimalTimer(Timer);
+struct AnimalTimer(world::time::GameTime);
 
 fn animal_processes( //Updates animal-inherent statuses; hunger, thirst, etc.
     mut query: Query<&mut Status, With<Animal>>,
-    time: Res<Time>,
+    game_time: Res<world::time::GameTime>,
     mut timer: ResMut<AnimalTimer>
 ){
-    if timer.0.tick(time.delta()).just_finished(){
+
+    if timer.0 <= *game_time {
         for mut status in query.iter_mut(){
             status.hunger += 1;
         }
+        *timer = AnimalTimer(game_time.copy_and_tick(60));
     }
 }
 

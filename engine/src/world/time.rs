@@ -1,3 +1,7 @@
+/*
+TODO: Implement fixed timestep so systems can catch up to render
+*/
+
 use std::time::Duration;
 
 use std::cmp::Ordering;
@@ -106,7 +110,7 @@ impl Plugin for TimePlugin {
         app
         .insert_resource(GameTime::from_stamp(Stamp{day: 0, hour: 6, minute: 0, second: 0}))
         .insert_resource(GameInWatch(Stopwatch::new()))
-        .insert_resource(GameTimeRate(2000.0))
+        .insert_resource(GameTimeRate(200.0))
         .add_system(advance_time.system().label("preparation"));
     }
 }

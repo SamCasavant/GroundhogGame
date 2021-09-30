@@ -18,7 +18,7 @@ extern crate engine;
 
 fn main() {
     App::build()
-        .insert_resource(ClearColor(Color::rgb(0.0, 0.0, 0.2)))
+        .insert_resource(ClearColor(Color::rgb(0.0, 0.0, 0.1)))
         .add_plugin(FrameTimeDiagnosticsPlugin::default())
         .add_plugin(LogDiagnosticsPlugin::default())
         .add_plugins(DefaultPlugins)
