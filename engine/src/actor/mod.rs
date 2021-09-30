@@ -44,8 +44,8 @@ impl Plugin for ActorPlugin {
     fn build(&self, app: &mut AppBuilder) {
         app
         .insert_resource(AnimalTimer(Timer::from_seconds(5.0, true)))
-        .add_system(animal_processes.system())
-        .add_system(choose_next_task.system());
+        .add_system(animal_processes.system().label("preparation"))
+        .add_system(choose_next_task.system().label("planning"));
     }
 }
 
@@ -64,7 +64,7 @@ fn choose_next_task(
         //TODO: Change priority calculation for scheduled events to incorporate eta
         match &routine.tasks {
             Some(tasks) => { 
-                let priority = time.how_soon(tasks[0].time); 
+                let priority = time.how_soon(&tasks[0].time); 
                 if priority > curtask.priority {
                     curtask = tasks[0].task.clone();
             }},
@@ -94,3 +94,4 @@ fn animal_processes( //Updates animal-inherent statuses; hunger, thirst, etc.
         }
     }
 }
+

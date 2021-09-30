@@ -35,6 +35,7 @@ pub fn spawn_actor(
         ))
         .insert(destination)
         .insert_bundle(sprite_sheet)
+        .insert(world::time::GameTime::from_stamp(world::time::Stamp{ day: 0, hour: 6, minute: 0, second: 0 }))
         .insert(Timer::from_seconds(0.1, true));
 }
 

@@ -78,7 +78,7 @@ impl Plugin for WorldPlugin {
             ..Default::default()
         })
         .add_startup_system(init_tilemaps.system())
-        .add_system(plan_path.system())
+        .add_system(plan_path.system().label("preparation"))
         .add_plugin(time::TimePlugin);
     }
 }

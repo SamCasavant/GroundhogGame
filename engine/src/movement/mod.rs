@@ -14,7 +14,7 @@ pub struct GraphicsPlugin;
 
 impl Plugin for GraphicsPlugin {
     fn build(&self, app: &mut AppBuilder) {
-        app.add_system(animate_sprite_system.system())
+        app.add_system(animate_sprite_system.system().label("render"))
             .add_system(camera_movement::camera_movement.system());
     }
 }

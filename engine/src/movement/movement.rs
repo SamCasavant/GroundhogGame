@@ -37,17 +37,17 @@ pub struct MovementPlugin;
 
 impl Plugin for MovementPlugin {
     fn build(&self, app: &mut AppBuilder) {
-        app.add_system(move_actor.system());
+        app.add_system(move_actor.system().label("action"));
     }
 }
 
 pub fn move_actor(
     mut tilemap: ResMut<world::TileMap>,
-    time: Res<Time>,
+    game_time: Res<world::time::GameTime>,
     mut commands: Commands,
     mut query: Query<(
         Entity,
-        &mut Timer,
+        &mut world::time::GameTime,
         &mut world::Position,
         &mut Orientation,
         &mut world::Destination,
@@ -57,11 +57,10 @@ pub fn move_actor(
     for (entity, mut timer, mut position, mut orientation, destination, mut path) in
         &mut query.iter_mut()
     {
-        timer.tick(time.delta());
         if path.0.len() < 1 {
             commands.entity(entity).remove::<world::Path>();
         }
-        if timer.just_finished() {
+        if *timer <= *game_time {
             if path.0.len() > 0 {
                 let mut next_step = path.0[0];
                 // If an entity's path is blocked by another entity, first try to find an alternate move that gets closer to the destination.
@@ -140,6 +139,8 @@ pub fn move_actor(
             if *destination == *position {
                 commands.entity(entity).remove::<world::Destination>();
             }
+            *timer = game_time.copy_and_tick(1);
         }
+        
     }
 }
