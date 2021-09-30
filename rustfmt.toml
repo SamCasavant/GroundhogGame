@@ -1,0 +1,16 @@
+fn_args_layout = "Vertical"
+fn_single_line = true
+format_strings = true
+imports_indent = "Visual"
+#control\ flow = "Visual"
+#function\ arguments = "Visual"
+#function\ calls = "Visual"
+max_width = 80
+normalize_comments = true
+overflow_delimited_expr = true
+group_imports = "StdExternalCrate"
+#report_todo = "Always"
+#report_fixme = "Always"
+struct_field_align_threshold = 20
+tab_spaces = 3
+use_try_shorthand = true
