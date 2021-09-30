@@ -19,7 +19,7 @@ fn main() {
         .add_plugin(LogDiagnosticsPlugin::default())
         .add_plugins(DefaultPlugins)
         .add_plugin(engine::movement::GraphicsPlugin)
-        .add_plugin(engine::movement::movement::MovementPlugin)
+        .add_plugin(engine::actor::ActorPlugin)
         .add_plugin(engine::world::WorldPlugin)
         .add_plugin(TilemapPlugin)
         .add_plugin(TiledMapPlugin)

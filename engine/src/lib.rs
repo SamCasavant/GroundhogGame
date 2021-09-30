@@ -29,9 +29,7 @@ pub fn spawn_actor(
         .spawn()
         .insert(identity)
         .insert(position)
-        .insert(movement::movement::Orientation(
-            movement::movement::Direction::Down,
-        ))
+        .insert(actor::Orientation(actor::Direction::Down))
         .insert(destination)
         .insert_bundle(sprite_sheet)
         .insert(world::time::GameTime::from_stamp(&world::time::Stamp {

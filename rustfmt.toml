@@ -12,5 +12,5 @@ group_imports = "StdExternalCrate"
 #report_todo = "Always"
 #report_fixme = "Always"
 wrap_comments = true
-struct_field_align_threshold = 20
+struct_field_align_threshold = 40
 use_try_shorthand = true

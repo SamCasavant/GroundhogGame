@@ -5,9 +5,9 @@
 pub(crate) use bevy::prelude::*;
 use bevy::render::draw::OutsideFrustum;
 
+use crate::actor;
 use crate::world;
 mod camera_movement;
-pub mod movement;
 
 pub struct GraphicsPlugin;
 
@@ -27,7 +27,7 @@ fn animate_sprite_system(
     mut query: Query<(
         &mut TextureAtlasSprite,
         &mut Transform,
-        &movement::Orientation,
+        &actor::Orientation,
         &world::Position,
         Without<OutsideFrustum>,
     )>
@@ -37,14 +37,14 @@ fn animate_sprite_system(
     {
         // Set sprite to match orientation
         match orientation.0 {
-            movement::Direction::Up => sprite.index = 5,
-            movement::Direction::Down => sprite.index = 1,
-            movement::Direction::Left => sprite.index = 10,
-            movement::Direction::Right => sprite.index = 13,
-            movement::Direction::UpLeft => todo!(),
-            movement::Direction::UpRight => todo!(),
-            movement::Direction::DownLeft => todo!(),
-            movement::Direction::DownRight => todo!(),
+            actor::Direction::Up => sprite.index = 5,
+            actor::Direction::Down => sprite.index = 1,
+            actor::Direction::Left => sprite.index = 10,
+            actor::Direction::Right => sprite.index = 13,
+            actor::Direction::UpLeft => todo!(),
+            actor::Direction::UpRight => todo!(),
+            actor::Direction::DownLeft => todo!(),
+            actor::Direction::DownRight => todo!(),
         }
         // Move sprite to match position
         let translation = Vec3::new(
