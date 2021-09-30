@@ -101,14 +101,23 @@ fn add_people(
 }
 
 //This will be replaced by an agent module in the near future
-fn new_destination(mut commands: Commands, query: Query<Entity, (With<engine::world::Position>, Without<engine::world::Destination>)>){
+fn new_destination(
+    mut commands: Commands,
+    query: Query<
+        Entity,
+        (
+            With<engine::world::Position>,
+            Without<engine::world::Destination>,
+        ),
+    >,
+) {
     for entity in query.iter() {
         let xrange = RangeInclusive::new(0, 100);
         let yrange = xrange.clone();
         let mut rng = rand::thread_rng();
         let x = rng.gen_range(xrange);
         let y = rng.gen_range(yrange);
-        let destination = engine::world::Destination(engine::world::Position{x: x, y: y});
+        let destination = engine::world::Destination(engine::world::Position { x, y });
         commands.entity(entity).insert(destination);
     }
 }
