@@ -136,15 +136,12 @@ pub fn move_actor(
                 });
                 tile.occupied = true;
                 *timer = game_time.copy_and_tick(1);
-            }
-            else{
+            } else {
                 *timer = game_time.copy_and_tick(0);
             }
             if *destination == *position {
                 commands.entity(entity).remove::<world::Destination>();
             }
-            
         }
-        
     }
 }

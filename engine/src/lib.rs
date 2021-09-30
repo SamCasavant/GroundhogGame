@@ -6,8 +6,8 @@ This file should be an interface between the engine and external world building 
 use bevy::prelude::*;
 pub mod movement;
 // When pub people run in pub circles it's a very, very
-pub mod world; 
 pub mod actor;
+pub mod world;
 
 pub use bevy_ecs_tilemap::prelude::*;
 
@@ -35,7 +35,12 @@ pub fn spawn_actor(
         ))
         .insert(destination)
         .insert_bundle(sprite_sheet)
-        .insert(world::time::GameTime::from_stamp(world::time::Stamp{ day: 0, hour: 6, minute: 0, second: 0 }));
+        .insert(world::time::GameTime::from_stamp(world::time::Stamp {
+            day: 0,
+            hour: 6,
+            minute: 0,
+            second: 0,
+        }));
 }
 
 #[derive(Clone)]

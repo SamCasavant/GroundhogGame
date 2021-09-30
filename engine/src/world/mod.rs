@@ -66,20 +66,20 @@ pub struct WorldPlugin;
 impl Plugin for WorldPlugin {
     fn build(&self, app: &mut AppBuilder) {
         app
-        //Tilemap
-        .insert_resource(TileMap {
-            map: HashMap::<Position, Tile>::new(),
-        })
-        //Window
-        .insert_resource(WindowDescriptor {
-            width: 1270.0,
-            height: 720.0,
-            title: String::from("game"),
-            ..Default::default()
-        })
-        .add_startup_system(init_tilemaps.system())
-        .add_system(plan_path.system().label("preparation"))
-        .add_plugin(time::TimePlugin);
+            //Tilemap
+            .insert_resource(TileMap {
+                map: HashMap::<Position, Tile>::new(),
+            })
+            //Window
+            .insert_resource(WindowDescriptor {
+                width: 1270.0,
+                height: 720.0,
+                title: String::from("game"),
+                ..Default::default()
+            })
+            .add_startup_system(init_tilemaps.system())
+            .add_system(plan_path.system().label("preparation"))
+            .add_plugin(time::TimePlugin);
     }
 }
 
