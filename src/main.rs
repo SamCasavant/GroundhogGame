@@ -10,7 +10,7 @@ use bevy::{diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin},
 use bevy_ecs_tilemap::prelude::*;
 use rand::Rng;
 
-extern crate engine;
+mod engine;
 
 fn main() {
     App::build()
@@ -18,7 +18,7 @@ fn main() {
         .add_plugin(FrameTimeDiagnosticsPlugin::default())
         .add_plugin(LogDiagnosticsPlugin::default())
         .add_plugins(DefaultPlugins)
-        .add_plugin(engine::movement::GraphicsPlugin)
+        .add_plugin(engine::render::GraphicsPlugin)
         .add_plugin(engine::actor::ActorPlugin)
         .add_plugin(engine::world::WorldPlugin)
         .add_plugin(TilemapPlugin)
@@ -47,7 +47,7 @@ fn add_people(
         let destination =
             engine::world::Destination(engine::world::Position { x: 60, y: 0 });
 
-        let sprite_sheet = engine::movement::init_sprite_sheet(
+        let sprite_sheet = engine::render::init_sprite_sheet(
             &"sprites/NPC1 (2).png".to_owned(),
             &asset_server,
             &mut texture_atlases,
@@ -77,7 +77,7 @@ fn add_people(
         let destination =
             engine::world::Destination(engine::world::Position { x: 0, y: 0 });
 
-        let sprite_sheet = engine::movement::init_sprite_sheet(
+        let sprite_sheet = engine::render::init_sprite_sheet(
             &"sprites/NPC1 (2).png".to_owned(),
             &asset_server,
             &mut texture_atlases,

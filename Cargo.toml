@@ -1,21 +1,24 @@
 [package]
-name = "game"
+name = "engine"
 version = "0.1.0"
-authors = ["Samuel Casavant <samuel.j.casavant@gmail.com>"]
 edition = "2018"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+authors = ["Samuel Casavant <samuel.j.casavant@gmail.com>"]
 
 [dependencies]
-bevy = { version = "0.5.0"} #, features = ["dynamic"] }
-
-rand = "0.8.4"
-
-#bevy_ecs_tilemap = { path = "../bevy_ecs_tilemap_bugfix/bevy_ecs_tilemap", features = ["tiled_map"] } 
+bevy = { version = "0.5.0"}#, features = ["dynamic"] }
+pathfinding = "2.0.4"
 bevy_ecs_tilemap = {git = "https://github.com/StarArawn/bevy_ecs_tilemap.git", features=["tiled_map"]}
 
+rand = "0.8.4" 
 
-engine = { path = "engine" }
+anyhow = { version = "1.0", optional = true }
+morton-encoding = "2.0"
+log = "0.4"
+serde_json = { version = "1.0", optional = true }
+tiled = { version = "0.9", default-features = false, optional = true }
+indexmap = "1.7.0"
+
+
 
 [profile.release]
 debug = true   
@@ -25,3 +28,8 @@ opt-level=3
 
 [profile.dev]
 opt-level=1
+
+[workspace.metadata.dylint]
+libraries = [
+    { git = "https://github.com/MinerSebas/bevy_lint", branch = "main" },
+]
