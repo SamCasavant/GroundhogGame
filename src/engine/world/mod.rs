@@ -4,16 +4,9 @@
 // Uses bevy_ecs_tilemap to draw tiles on screen.
 // Note: Support for bevy_ecs_tilemap/tiled_map to be deprecated in future
 //
-// Pathfinding:
-// Entities with a Position and Destinations component, but without a Path
-// component use this module to generate a path. Paths are initialized in full
-// using aStar. Paths are stored in the Path component (a vector of positions)
-// and Ground Types are used to produce tile weights, which hopefully can
-// encourage aStar to prefer sidewalks over roads. Note: This may not be
-// deterministic, and needs to be. Consider invoking bevy stages.
-//
 
 use std::collections::HashMap;
+use std::ops::Sub;
 
 use bevy::prelude::*;
 use bevy_ecs_tilemap::prelude::*;
@@ -43,8 +36,8 @@ impl Position {
         y_radius: i64,
     ) -> Vec<Position> {
         let mut range = Vec::new();
-        for x in self.x - x_radius..self.x + x_radius {
-            for y in self.y - y_radius..self.y + y_radius {
+        for x in (self.x - x_radius)..=(self.x + x_radius) {
+            for y in (self.y - y_radius)..=(self.y + y_radius) {
                 let position = Position { x, y };
                 if !(*self == position) {
                     range.push(position)
@@ -52,6 +45,18 @@ impl Position {
             }
         }
         range
+    }
+}
+impl Sub for Position {
+    type Output = Self;
+    fn sub(
+        self: Position,
+        other: Self,
+    ) -> Self {
+        Self {
+            x: self.x - other.x,
+            y: self.y - other.y,
+        }
     }
 }
 

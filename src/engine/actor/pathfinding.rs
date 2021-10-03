@@ -1,10 +1,17 @@
+// Pathfinding:
+// Entities with a Position and Destinations component, but without a Path
+// component use this module to generate a path. Paths are initialized in full
+// using aStar. Paths are stored in the Path component (a vector of positions)
+// and Ground Types are used to produce tile weights, which hopefully can
+// encourage aStar to prefer sidewalks over roads. Note: This may not be
+// deterministic, and needs to be. Consider invoking bevy stages.
+//
+
 use std::cmp::min;
-use std::ops::Range;
 
 use bevy::prelude::*;
 use pathfinding::prelude::{absdiff, astar};
 
-use crate::engine::actor::{Direction, Orientation};
 use crate::engine::world::{Destination, Position, TileEntityMap, TileWeightMap};
 
 #[derive(Clone)]
@@ -12,59 +19,53 @@ pub struct Path(pub Vec<Position>);
 impl Path {}
 
 pub fn local_avoidance(
-    mut commands: Commands,
+    // mut commands: Commands,
     entity_map: Res<TileEntityMap>,
     weight_map: Res<TileWeightMap>,
-    mut query: Query<(Entity, &Position, &mut Path, &Orientation)>,
+    mut query: Query<(/* Entity, */ &Position, &mut Path)>,
 ) {
-    for (entity, position, mut path, orientation) in query.iter_mut() {
+    // Path Wars: Episode IV
+    // It is a period of civil war.
+    // Bounding get_path has fixed the stalling issue...
+    // But entities still can't find a path to an occupied destination.
+    // The empire needs to be pathing to the position that is closest to the
+    // destination. But this doesn't mesh well with current logic.
+    // The empire will begin a rewrite of this file.
+    // Powerful enough to destroy an entire planet, its completion spells
+    // certain doom for the champions of freedom.
+
+    for (/* entity, */ position, mut path) in query.iter_mut() {
         let mut nearby_entities = Vec::new();
-        for near_position in position.get_range(2, 2) {
+        for near_position in position.get_range(1, 1) {
             match entity_map.map.get(&near_position) {
                 Some(entity) => nearby_entities.push(entity),
                 None => (),
             }
         }
         if !nearby_entities.is_empty() {
-            // TODO: Rewrite this trash
-            let x = position.x;
-            let y = position.y;
-            let detour = match orientation.0 {
-                Direction::Up => Position { x: x + 1, y: y + 1 },
-                Direction::Down => Position { x: x - 1, y: y - 1 },
-                Direction::UpLeft => Position { x, y: y + 1 },
-                Direction::UpRight => Position { x: x + 1, y },
-                Direction::DownLeft => Position { x: x - 1, y },
-                Direction::DownRight => Position { x, y: y - 1 },
-                Direction::Left => Position { x: x - 1, y: y + 1 },
-                Direction::Right => Position { x: x + 1, y: y - 1 },
-            };
-            let (index, slice) =
-                local_detour(&path.clone(), &detour, &weight_map);
-            path.0.splice(..index, slice);
-        }
-    }
-}
-
-fn local_detour(
-    path: &Path,
-    position: &Position,
-    weight_map: &Res<TileWeightMap>,
-) -> (usize, [Position; 2]) {
-    // Adds a step to the beginning of the path and then subsequent steps
-    // to rejoin the path
-    for neighbor in neighbors_with_weights(position, weight_map) {
-        if neighbor.1 != i64::MAX {
-            for index in 0..1 {
-                if path.0[index] == neighbor.0 {
-                    let slice = [*position, neighbor.0];
-                    return (index, slice);
+            let mut index = 2;
+            if path.0.len() < 1 {
+                continue;
+            } else if path.0.len() < 2 {
+                index = 0;
+            } else if path.0.len() < 3 {
+                index = 1;
+            }
+            let local_path = get_path_around_entities(
+                position,
+                &mut path.0[index],
+                &weight_map,
+                &entity_map,
+            );
+            path.0 = match local_path {
+                Some(mut p) => {
+                    p.extend(path.0[index + 1..].iter().cloned());
+                    p
                 }
+                None => vec![*position],
             }
         }
     }
-    let slice = get_path(position, &path.0[2], weight_map).unwrap();
-    return (2, [slice.0[0], slice.0[1]]);
 }
 
 pub fn plan_path(
@@ -75,10 +76,8 @@ pub fn plan_path(
     for (entity, position, destination) in query.iter() {
         let plan = get_path(position, &destination.0, &weight_map);
         if let Some(p) = plan {
-            let mut path = p.0;
-            path.remove(0);
-            if !path.is_empty() {
-                commands.entity(entity).insert(Path(path));
+            if !p.is_empty() {
+                commands.entity(entity).insert(Path(p));
             }
         }
     }
@@ -88,19 +87,25 @@ pub fn get_path(
     position: &Position,
     destination: &Position,
     weight_map: &Res<TileWeightMap>,
-) -> Option<Path> {
+) -> Option<Vec<Position>> {
     let mut path = Vec::new();
     let plan = astar(
         position,
-        |p| neighbors_with_weights(p, &weight_map),
+        |p| neighbors_with_weights(p, weight_map),
         |p| diagonal_distance(p, destination),
-        |p| p == destination,
-    );
-    if let Some(p) = plan {
-        for step in p.0 {
+        |p| {
+            *p == *destination
+                || diagonal_distance(p, destination)
+                    > 4 * diagonal_distance(position, destination)
+        },
+    )
+    .unwrap_or((vec![*position], 0));
+    if plan.0.last() == Some(destination) {
+        for step in plan.0 {
             path.push(step);
         }
-        Some(Path(path))
+        path.remove(0);
+        Some(path)
     } else {
         None
     }
@@ -114,28 +119,157 @@ pub fn neighbors_with_weights(
     let y = position.y;
     let mut neighbors = Vec::new();
     for (step_x, step_y) in &[(0, 1), (0, -1), (1, 0), (-1, 0)] {
-        if let Some(weight) = weight_map.map.get(&position) {
+        let check_position = Position {
+            x: x + step_x,
+            y: y + step_y,
+        };
+        if let Some(weight) = weight_map.map.get(&check_position) {
+            if weight < &i64::MAX {
+                neighbors
+                    .push((check_position, weight_map.map[&check_position]));
+            }
+        } else {
+            // FIXME: This else block should be removed once weight_map is fully
+            // implemented
+            neighbors.push((check_position, 1));
+        }
+    }
+    for (step_x, step_y) in &[(1, 1), (-1, -1), (1, -1), (-1, 1)] {
+        let check_position = Position {
+            x: x + step_x,
+            y: y + step_y,
+        };
+        if let Some(weight) = weight_map.map.get(&check_position) {
             if weight < &i64::MAX {
                 neighbors.push((
-                    Position {
-                        x: x + step_x,
-                        y: y + step_y,
-                    },
-                    weight_map.map[&position],
+                    check_position,
+                    ((weight_map.map[&check_position] as f64) * 2_f64.sqrt())
+                        as i64,
                 ));
+            }
+        } else {
+            // FIXME: This else block should be removed once weight_map is fully
+            // implemented
+            neighbors.push((check_position, 2));
+        }
+    }
+    neighbors
+}
+fn get_path_around_entities(
+    position: &Position,
+    destination: &Position,
+    weight_map: &Res<TileWeightMap>,
+    entity_map: &Res<TileEntityMap>,
+) -> Option<Vec<Position>> {
+    let mut path = Vec::new();
+
+    let plan = astar(
+        position,
+        |p| neighbors_with_entities(p, weight_map, entity_map),
+        |p| diagonal_distance(p, destination),
+        |p| {
+            *p == *destination
+                || diagonal_distance(p, destination)
+                    > 100 * diagonal_distance(position, destination)
+        },
+    )
+    .unwrap_or((vec![*position], 0));
+
+    if plan.0.last() == Some(destination) {
+        for step in plan.0 {
+            path.push(step);
+        }
+        path.remove(0);
+        return Some(path);
+    } else {
+        println!("Could not find path");
+        None
+    }
+}
+
+fn neighbors_with_entities(
+    position: &Position,
+    weight_map: &Res<TileWeightMap>,
+    entity_map: &Res<TileEntityMap>,
+) -> Vec<(Position, i64)> {
+    let x = position.x;
+    let y = position.y;
+    let mut neighbors = Vec::new();
+    for (step_x, step_y) in &[(0, 1), (0, -1), (1, 0), (-1, 0)] {
+        let check_position = Position {
+            x: x + step_x,
+            y: y + step_y,
+        };
+
+        if let Some(entity) = entity_map.map.get(&check_position) {
+            if entity.is_none() {
+                if let Some(weight) = weight_map.map.get(&check_position) {
+                    if weight < &i64::MAX {
+                        neighbors.push((
+                            check_position,
+                            weight_map.map[&check_position],
+                        ));
+                    }
+                } else {
+                    // FIXME: This else block should be removed once weight_map
+                    // is fully implemented
+                    neighbors.push((check_position, 1));
+                }
+            }
+        } else {
+            // FIXME: This else block should be removed once entity_map
+            // is fully implemented
+            if let Some(weight) = weight_map.map.get(&check_position) {
+                if weight < &i64::MAX {
+                    neighbors.push((
+                        check_position,
+                        weight_map.map[&check_position],
+                    ));
+                }
+            } else {
+                // FIXME: This else block should be removed once weight_map
+                // is fully implemented
+                neighbors.push((check_position, 1));
             }
         }
     }
     for (step_x, step_y) in &[(1, 1), (-1, -1), (1, -1), (-1, 1)] {
-        if let Some(weight) = weight_map.map.get(&position) {
-            if weight < &i64::MAX {
-                neighbors.push((
-                    Position {
-                        x: x + step_x,
-                        y: y + step_y,
-                    },
-                    ((weight_map.map[&position] as f64) * 2_f64.sqrt()) as i64,
-                ));
+        let check_position = Position {
+            x: x + step_x,
+            y: y + step_y,
+        };
+        if let Some(entity) = entity_map.map.get(&check_position) {
+            if entity.is_none() {
+                if let Some(weight) = weight_map.map.get(&check_position) {
+                    if weight < &i64::MAX {
+                        neighbors.push((
+                            check_position,
+                            ((weight_map.map[&check_position] as f64)
+                                * 2_f64.sqrt())
+                                as i64,
+                        ));
+                    }
+                } else {
+                    // FIXME: This else block should be removed once weight_map
+                    // is fully implemented
+                    neighbors.push((check_position, 2));
+                }
+            }
+        } else {
+            // FIXME: This else block should be removed once entity_map
+            // is fully implemented
+            if let Some(weight) = weight_map.map.get(&check_position) {
+                if weight < &i64::MAX {
+                    neighbors.push((
+                        check_position,
+                        ((weight_map.map[&check_position] as f64)
+                            * 2_f64.sqrt()) as i64,
+                    ));
+                }
+            } else {
+                // FIXME: This else block should be removed once weight_map
+                // is fully implemented
+                neighbors.push((check_position, 2));
             }
         }
     }

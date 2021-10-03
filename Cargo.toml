@@ -1,35 +1,32 @@
 [package]
 name = "engine"
 version = "0.1.0"
-edition = "2018"
 authors = ["Samuel Casavant <samuel.j.casavant@gmail.com>"]
+edition = "2018"
 
 [dependencies]
-bevy = { version = "0.5.0"}#, features = ["dynamic"] }
-pathfinding = "2.0.4"
-bevy_ecs_tilemap = {git = "https://github.com/StarArawn/bevy_ecs_tilemap.git", features=["tiled_map"]}
-
-rand = "0.8.4" 
-
 anyhow = { version = "1.0", optional = true }
-morton-encoding = "2.0"
+bevy = { version = "0.5.0" } # , features = ["dynamic"] }
+bevy_ecs_tilemap = { git = "https://github.com/StarArawn/bevy_ecs_tilemap.git", features = ["tiled_map"] }
+indexmap = "1.7.0"
 log = "0.4"
+morton-encoding = "2.0"
+pathfinding = "2.0.4"
+pretty_trace = {git = "https://github.com/10XGenomics/rust-toolbox.git"}
+rand = "0.8.4"
 serde_json = { version = "1.0", optional = true }
 tiled = { version = "0.9", default-features = false, optional = true }
-indexmap = "1.7.0"
-
-
 
 [profile.release]
-debug = true   
+debug = true
 
 [profile.dev.package."*"]
-opt-level=3
+opt-level = 3
 
 [profile.dev]
-opt-level=1
+opt-level = 1
 
 [workspace.metadata.dylint]
 libraries = [
-    { git = "https://github.com/MinerSebas/bevy_lint", branch = "main" },
+  { git = "https://github.com/MinerSebas/bevy_lint", branch = "main" },
 ]

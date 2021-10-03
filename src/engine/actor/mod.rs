@@ -55,6 +55,13 @@ impl Plugin for ActorPlugin {
                 second: 0,
             },
         )))
+        .add_system(pathfinding::plan_path.system().label("preparation"))
+        .add_system(
+            pathfinding::local_avoidance
+                .system()
+                .label("planning")
+                .after("preparation"),
+        )
         .add_system(animal_processes.system().label("preparation"))
         .add_system(choose_next_task.system().label("planning"))
         .add_system(move_actor.system().label("action"));
@@ -135,7 +142,6 @@ mod pathfinding;
 
 pub fn move_actor(
     mut entity_map: ResMut<world::TileEntityMap>,
-    weightmap: Res<world::TileWeightMap>,
     game_time: Res<world::time::GameTime>,
     mut commands: Commands,
     mut query: Query<(
@@ -143,7 +149,7 @@ pub fn move_actor(
         &mut world::time::GameTime,
         &mut world::Position,
         &mut Orientation,
-        &mut world::Destination,
+        &world::Destination,
         &mut pathfinding::Path,
     )>,
 ) {
@@ -159,42 +165,9 @@ pub fn move_actor(
         if path.0.is_empty() {
             commands.entity(entity).remove::<pathfinding::Path>();
         } else if *timer <= *game_time {
-            let mut next_step = path.0[0];
-            // If an entity's path is blocked by another entity, first try
-            // to find an alternate move that gets closer to
-            // the destination.
-            // if entity_map.map.contains_key(&next_step)
-            //     && let Some(e) entity_map.map[&next_step]
-            // {
-            //     commands.entity(entity).remove::<pathfinding::Path>();
-            //     let mut cur_distance = (destination.0.x - position.x).pow(2)
-            //         + (destination.0.y - position.y).pow(2);
-            //     next_step = *position;
-            //     let mut temp_steps = pathfinding::neighbors_with_weights(
-            //         &*position,
-            //         &entity_map,
-            //     );
-            //     temp_steps.sort_by_key(|k| k.1);
-            //     for step in &temp_steps {
-            //         if !entity_map.map.contains_key(&step.0)
-            //             || !entity_map.map[&step.0].occupied
-            //         {
-            //             let new_distance =
-            //                 (destination.0.x - (position.x +
-            // step.0.x)).pow(2)                     +
-            // (destination.0.y - (position.y + step.0.y))
-            //                         .pow(2);
-            //             if new_distance < cur_distance {
-            //                 cur_distance = new_distance;
-            //                 next_step = step.0;
-            //             }
-            //         }
-            //     }
-            // } else {
-            //     path.0.remove(0);
-            // }
-
-            match next_step {
+            let next_step = path.0.remove(0); // path.0[0]; //
+            let next_direction = next_step - *position;
+            match next_direction {
                 world::Position { x: 1, .. } => {
                     *orientation = Orientation(Direction::Up);
                 }
@@ -209,15 +182,24 @@ pub fn move_actor(
                 }
                 _ => (),
             }
-            let mut tile = entity_map.map.entry(*position).or_insert(None);
+            // FIXME: These .or_insert()s are a temporary measure, remove when
+            // entity_map is fully implemented.
+            // Mark previous tile as unoccupied
+            entity_map.map.entry(*position).or_insert(None);
+            // Move the actor
             *position = next_step;
-            tile = entity_map.map.entry(*position).or_insert(Some(entity));
+            // Mark next tile as occupied
+            entity_map.map.entry(*position).or_insert(Some(entity));
+            // Set time of next action
             *timer = game_time.copy_and_tick(1);
         } else {
             *timer = game_time.copy_and_tick(0);
         }
         if *destination == *position {
-            commands.entity(entity).remove::<world::Destination>();
+            commands
+                .entity(entity)
+                .remove::<world::Destination>()
+                .remove::<pathfinding::Path>();
         }
     }
 }

@@ -32,8 +32,8 @@ pub fn camera_movement(
             let scale = scale - event.y / 5.0;
             transform.scale = Vec3::splat(scale);
         }
-        if transform.scale.x < 1.0 {
-            transform.scale = Vec3::splat(1.0);
+        if transform.scale.x < 5.0 {
+            transform.scale = Vec3::splat(5.0);
         }
         direction *= transform.scale.x;
         // Add world bounds (Temporary until camera follows player)

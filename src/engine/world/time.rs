@@ -136,7 +136,7 @@ impl Plugin for TimePlugin {
             second: 0,
         }))
         .insert_resource(GameInWatch(Stopwatch::new()))
-        .insert_resource(GameTimeRate(2.0))
+        .insert_resource(GameTimeRate(1.5))
         .add_system(advance_time.system().label("preparation"));
     }
 }

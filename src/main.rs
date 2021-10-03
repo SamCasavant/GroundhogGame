@@ -1,6 +1,3 @@
-// Contains the game.
-// This is separate from the engine to limit complexity.
-
 use std::ops::RangeInclusive;
 
 use bevy::{diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin},
@@ -8,11 +5,13 @@ use bevy::{diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin},
                  entity::Entities},
            prelude::*};
 use bevy_ecs_tilemap::prelude::*;
+use pretty_trace::*;
 use rand::Rng;
 
 mod engine;
 
 fn main() {
+    PrettyTrace::new().on();
     App::build()
         .insert_resource(ClearColor(Color::rgb(0.0, 0.0, 0.1)))
         .add_plugin(FrameTimeDiagnosticsPlugin::default())
@@ -95,7 +94,6 @@ fn add_people(
         );
         x += 1;
     }
-    println!("Spawned {} entities.", x);
 }
 
 // This will be replaced by an agent module in the near future
