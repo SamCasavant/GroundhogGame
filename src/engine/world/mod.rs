@@ -12,31 +12,19 @@ use bevy_ecs_tilemap::prelude::*;
 
 pub mod time;
 
-#[derive(Debug)]
-pub enum GroundType {
-    ShortGrass,
-    TallGrass,
-    Sidewalk,
-    Path,
-    Street,
-    Crosswalk,
-    Obstacle,
-}
-
 #[derive(Debug, Copy, Clone, PartialEq, Hash, Eq)]
 pub struct Position {
     pub x: i64,
     pub y: i64,
 }
 impl Position {
-    pub fn get_range(
+    pub fn neighbors(
         &self,
-        x_radius: i64,
-        y_radius: i64,
+        radius: i64,
     ) -> Vec<Position> {
         let mut range = Vec::new();
-        for x in (self.x - x_radius)..=(self.x + x_radius) {
-            for y in (self.y - y_radius)..=(self.y + y_radius) {
+        for x in (self.x - radius)..=(self.x + radius) {
+            for y in (self.y - radius)..=(self.y + radius) {
                 let position = Position { x, y };
                 if !(*self == position) {
                     range.push(position)
@@ -116,7 +104,7 @@ impl TileWeightMap {
 }
 
 pub struct TileEntityMap {
-    pub map: Vec<Option<Entity>>, /* Should this be transitioned to fixed
+    pub map: Vec<Option<Entity>>, /* Should this be converted to fixed
                                    * size array
                                    * * because we know the size at compile
                                    *   time? */

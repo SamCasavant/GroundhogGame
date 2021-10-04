@@ -19,7 +19,6 @@ use crate::engine::world::{Destination, Position, TileEntityMap, TileWeightMap};
 
 #[derive(Clone)]
 pub struct Path(pub Vec<Position>);
-impl Path {}
 
 pub fn local_avoidance(
     // mut commands: Commands,
@@ -42,18 +41,14 @@ pub fn local_avoidance(
             {
                 path.0 = Vec::<Position>::new();
             } else if entity_map.get(path.0[0].x, path.0[0].y).is_some() {
-                let (local_destination, mut index) = if path.0.len() == 2 {
-                    (path.0[1], 1)
-                } else {
-                    (path.0[2], 2)
-                };
+                let index = if path.0.len() == 2 { 1 } else { 2 };
+                let local_destination = path.0[index];
                 let valid_destination = best_nearest_valid_destination(
                     position,
                     &local_destination,
                     &destination.0,
                     &weight_map,
                     &entity_map,
-                    1,
                 );
 
                 if valid_destination.is_some() {
@@ -65,11 +60,21 @@ pub fn local_avoidance(
                     );
                     path.0 = match local_path {
                         Some(mut p) => {
-                            p.extend(path.0[index + 1..].iter().cloned());
+                            if p.last()
+                                .unwrap()
+                                .neighbors(1)
+                                .contains(&path.0[index])
+                            {
+                                // If the old path can be affixed to the new
+                                // one:
+                                p.extend(path.0[index + 1..].iter().cloned());
+                            }
                             p
                         }
                         None => vec![*position],
                     }
+                } else {
+                    path.0 = Vec::<Position>::new();
                 }
             }
         }
@@ -82,7 +87,7 @@ fn nearby_entities(
     entity_map: &Res<TileEntityMap>,
 ) -> Option<Vec<Entity>> {
     let mut nearby_entities = Vec::new();
-    for near_position in position.get_range(range, range) {
+    for near_position in position.neighbors(range) {
         if let Some(entity) = entity_map.get(near_position.x, near_position.y) {
             nearby_entities.push(entity);
         }
@@ -101,14 +106,13 @@ fn best_nearest_valid_destination(
     destination: &Position, // Final destination
     weight_map: &Res<TileWeightMap>,
     entity_map: &Res<TileEntityMap>,
-    mut search_range: i64,
+    // mut search_range: u32,
 ) -> Option<Position> {
     if entity_map.get(target.x, target.y).is_none()
         && weight_map.get(target.x, target.y) < i64::MAX
     {
         return Some(*target);
     }
-    search_range -= 1;
     let min_weight = weight_map.get(position.x, position.y);
     let min_distance = diagonal_distance(position, destination);
     let mut valid_destination = None;
@@ -119,10 +123,14 @@ fn best_nearest_valid_destination(
             valid_destination = Some(neighbor.0);
         }
     }
+
+    // search_range -= 1;
     if valid_destination.is_some() {
+        println!("Found valid destination");
         valid_destination
-    } else if search_range > 0 {
-        todo!() // This will be a recursive call to this function
+    //} else if search_range > 0 {
+    //    todo!() // This function could be rewritten to be recursive when it
+    // inevitably comes up
     } else {
         None
     }
