@@ -91,6 +91,9 @@ pub fn get_path(
     weight_map: &Res<TileWeightMap>,
 ) -> Option<Vec<Position>> {
     let mut path = Vec::new();
+    if weight_map.get(destination.x, destination.y) == i64::MAX {
+        panic!("Destination is inaccessible")
+    }
     let plan = astar(
         position,
         |p| neighbors_with_weights(p, weight_map),
@@ -157,7 +160,9 @@ fn get_path_around_entities(
     entity_map: &Res<TileEntityMap>,
 ) -> Option<Vec<Position>> {
     let mut path = Vec::new();
-
+    if entity_map.get(destination.x, destination.y).is_some() {
+        panic!("Destination is inaccessible")
+    }
     let plan = astar(
         position,
         |p| neighbors_with_entities(p, weight_map, entity_map),
