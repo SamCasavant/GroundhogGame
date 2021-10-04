@@ -64,7 +64,7 @@ impl Plugin for ActorPlugin {
         )
         .add_system(animal_processes.system().label("preparation"))
         .add_system(choose_next_task.system().label("planning"))
-        .add_system(move_actor.system().label("action"));
+        .add_system(move_actor.system().label("action").after("planning"));
     }
 }
 
@@ -165,7 +165,10 @@ pub fn move_actor(
         if path.0.is_empty() {
             commands.entity(entity).remove::<pathfinding::Path>();
         } else if *timer <= *game_time {
-            let next_step = path.0.remove(0); // path.0[0]; //
+            let next_step = path.0.remove(0);
+            if path.0.is_empty() {
+                commands.entity(entity).remove::<pathfinding::Path>();
+            }
             let next_direction = next_step - *position;
             match next_direction {
                 world::Position { x: 1, .. } => {
