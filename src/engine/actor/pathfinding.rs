@@ -3,9 +3,12 @@
 // component use this module to generate a path. Paths are initialized in full
 // using aStar. Paths are stored in the Path component (a vector of positions)
 // and Ground Types are used to produce tile weights, which hopefully can
-// encourage aStar to prefer sidewalks over roads. Note: This may not be
-// deterministic, and needs to be. Consider invoking bevy stages.
-//
+// encourage aStar to prefer sidewalks over roads.
+
+// TODO: This probably isn't deterministic, and it needs to be. When two
+// entities want the same position, the first one to try will get it. The order
+// entities try in is not guaranteed to be deterministic (?)
+// Explicit system ordering is probably also needed.
 
 use std::cmp::min;
 
@@ -22,7 +25,7 @@ pub fn local_avoidance(
     // mut commands: Commands,
     entity_map: Res<TileEntityMap>,
     weight_map: Res<TileWeightMap>,
-    mut query: Query<(/* Entity, */ &Position, &mut Path)>,
+    mut query: Query<(Entity, &Position, &mut Path, &Destination)>,
 ) {
     // Path Wars: Episode IV
     // It is a period of civil war.
@@ -34,7 +37,7 @@ pub fn local_avoidance(
     // Powerful enough to destroy an entire planet, its completion spells
     // certain doom for the champions of freedom.
 
-    for (/* entity, */ position, mut path) in query.iter_mut() {
+    for (_entity, position, mut path, destination) in query.iter_mut() {
         let mut nearby_entities = Vec::new();
         for near_position in position.get_range(1, 1) {
             if let Some(entity) =
@@ -44,28 +47,106 @@ pub fn local_avoidance(
             }
         }
         if !nearby_entities.is_empty() {
-            // TODO: Cleanup during rewrite
-            let mut index = 2;
-            if path.0.is_empty() {
-                continue;
-            } else if path.0.len() < 2 {
-                index = 0;
-            } else if path.0.len() < 3 {
-                index = 1;
-            }
-            let local_path = get_path_around_entities(
-                position,
-                &path.0[index],
-                &weight_map,
-                &entity_map,
-            );
-            path.0 = match local_path {
-                Some(mut p) => {
-                    p.extend(path.0[index + 1..].iter().cloned());
-                    p
+            //=============================================================//
+            // Handle edge cases
+            if path.0.len() == 0 {
+                panic!(
+                    "Path should never be empty during local avoidance, \
+                     something is happening in the wrong order."
+                )
+            } else if path.0.len() == 1
+                && entity_map.get(path.0[0].x, path.0[0].y).is_some()
+            {
+                // If the end of the path is one step away and it's occupied,
+                // hold off until next cycle. Otherwise, we don't have to do
+                // anything.
+                path.0 = Vec::<Position>::new();
+            } else if entity_map.get(path.0[0].x, path.0[0].y).is_some() {
+                // If the end of the path is two steps away, and the next step
+                // is occupied, see if another neighbor of the end is unoccupied
+                // and make that the first step. If there is no such neighbor,
+                // hold off until the next cycle. Otherwise, we don't have to do
+                // anything.
+                let current_neighbors =
+                    neighbors_with_entities(position, &weight_map, &entity_map);
+                let target_neighbors = neighbors_with_entities(
+                    &path.0[1],
+                    &weight_map,
+                    &entity_map,
+                );
+                let mut local_destination = None;
+                let mut min_weight = i64::MAX;
+                for neighbor in target_neighbors {
+                    // This could maybe be a bit more efficient, we're
+                    // potentially searching 8 elements of each vector when we
+                    // only need to check 3. Shouldn't need to optimize this
+                    // intersect though, as n will always be small.
+                    if current_neighbors.contains(&neighbor) {
+                        if neighbor.1 < min_weight {
+                            local_destination = Some(neighbor.0);
+                            min_weight = neighbor.1;
+                        }
+                    }
                 }
-                None => vec![*position],
-            }
+                if local_destination.is_some() {
+                    path.0[0] = local_destination.unwrap();
+                } else {
+                    path.0 = Vec::<Position>::new()
+                }
+            } // else {
+              // If the end of the path is three or more steps away,
+              //}
+              // let mut local_destination = path.0[index];
+              // if entity_map
+              //     .get(local_destination.x, local_destination.y)
+              //     .is_some()
+              // {
+              //     // Shouldn't need to check tile weight, because we do that
+              //     // earlier
+              //     let mut min_distance = i64::MAX;
+              //     let mut x_range = 1;
+              //     let mut y_range = 1;
+              //     let mut found_new_destination = false;
+              //     let mut best_destination = Position { x: -1, y: -1 }; //
+              // Hacky     while !found_new_destination {
+              //         for check_destination in
+              //             destination.0.get_range(x_range, y_range)
+              //         {
+              //             let x = check_destination.x;
+              //             let y = check_destination.y;
+              //             if weight_map.get(x, y) != i64::MAX {
+              //                 if entity_map.get(x, y).is_none() {
+              //                     if diagonal_distance(
+              //                         &Position { x, y },
+              //                         &destination.0,
+              //                     ) < min_distance
+              //                     {
+              //                         let best_destination = Position { x, y
+              // };                     }
+              //                 }
+              //             }
+              //             if best_destination != (Position { x: -1, y: -1 })
+              // {                 // Hacky
+              //                 local_destination = best_destination;
+              //                 found_new_destination = true;
+              //             }
+              //         }
+              //     }
+              //============================================================//
+              // TODO: Cleanup during rewrite
+
+            // let local_path = get_path_around_entities(
+            //     position,
+            //     &path.0[index],
+            //     &weight_map,
+            //     &entity_map,
+            // );
+            // path.0 = match local_path {
+            //     Some(mut p) => {
+            //         p.extend(path.0[index + 1..].iter().cloned());
+            //         p
+            //     }
+            //     None => vec![*position],
         }
     }
 }
@@ -160,9 +241,7 @@ fn get_path_around_entities(
     entity_map: &Res<TileEntityMap>,
 ) -> Option<Vec<Position>> {
     let mut path = Vec::new();
-    if entity_map.get(destination.x, destination.y).is_some() {
-        panic!("Destination is inaccessible")
-    }
+
     let plan = astar(
         position,
         |p| neighbors_with_entities(p, weight_map, entity_map),

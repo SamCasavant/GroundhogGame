@@ -64,7 +64,7 @@ impl Plugin for ActorPlugin {
         )
         .add_system(animal_processes.system().label("preparation"))
         .add_system(choose_next_task.system().label("planning"))
-        .add_system(move_actor.system().label("action"));
+        .add_system(move_actor.system().label("action").after("planning"));
     }
 }
 
