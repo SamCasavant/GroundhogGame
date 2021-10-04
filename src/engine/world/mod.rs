@@ -73,9 +73,45 @@ impl PartialEq<Position> for Destination {
 
 #[derive(Default)]
 pub struct TileWeightMap {
-    // Maps position to weight (i64)
-    // i64::MAX is treated as an obstacle
-    pub map: HashMap<Position, i64>,
+    pub map: Vec<i64>,
+    width:   i64,
+    height:  i64,
+    /* Maps position to weight (i64)
+     * i64::MAX is treated as an obstacle */
+}
+impl TileWeightMap {
+    pub fn new(
+        width: i64,
+        height: i64,
+    ) -> Self {
+        let map = vec![0; (width * height) as usize];
+        Self { map, width, height }
+    }
+    pub fn get(
+        &self,
+        x: i64,
+        y: i64,
+    ) -> i64 {
+        if 0 <= x && x < self.width && 0 <= y && y < self.height {
+            let index = (y * self.width + x) as usize;
+            return self.map[index];
+        } else {
+            return i64::MAX;
+        }
+    }
+    pub fn set(
+        &mut self,
+        x: i64,
+        y: i64,
+        val: i64,
+    ) {
+        if 0 <= x && x < self.width && 0 <= y && y < self.height {
+            let index = (y * self.width + x) as usize - 1;
+            self.map[index] = val;
+        } else {
+            panic!("Writing weight to tile outside of map.")
+        }
+    }
 }
 
 pub struct TileEntityMap {
@@ -91,9 +127,7 @@ impl Plugin for WorldPlugin {
     ) {
         app
             //Tilemap
-            .insert_resource(TileWeightMap {
-                map: HashMap::<Position, i64>::new(),
-            })
+            .insert_resource(TileWeightMap::new(200, 200))
             .insert_resource(TileEntityMap {
                 map: HashMap::<Position, Option<Entity>>::new()
             })

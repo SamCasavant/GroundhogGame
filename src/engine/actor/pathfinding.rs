@@ -119,38 +119,31 @@ pub fn neighbors_with_weights(
     let y = position.y;
     let mut neighbors = Vec::new();
     for (step_x, step_y) in &[(0, 1), (0, -1), (1, 0), (-1, 0)] {
-        let check_position = Position {
-            x: x + step_x,
-            y: y + step_y,
-        };
-        if let Some(weight) = weight_map.map.get(&check_position) {
-            if weight < &i64::MAX {
-                neighbors
-                    .push((check_position, weight_map.map[&check_position]));
-            }
-        } else {
-            // FIXME: This else block should be removed once weight_map is fully
-            // implemented
-            neighbors.push((check_position, 1));
+        let check_x = x + step_x;
+        let check_y = y + step_y;
+        let weight = weight_map.get(check_x, check_y);
+        if weight < i64::MAX {
+            neighbors.push((
+                Position {
+                    x: check_x,
+                    y: check_y,
+                },
+                weight,
+            ));
         }
     }
     for (step_x, step_y) in &[(1, 1), (-1, -1), (1, -1), (-1, 1)] {
-        let check_position = Position {
-            x: x + step_x,
-            y: y + step_y,
-        };
-        if let Some(weight) = weight_map.map.get(&check_position) {
-            if weight < &i64::MAX {
-                neighbors.push((
-                    check_position,
-                    ((weight_map.map[&check_position] as f64) * 2_f64.sqrt())
-                        as i64,
-                ));
-            }
-        } else {
-            // FIXME: This else block should be removed once weight_map is fully
-            // implemented
-            neighbors.push((check_position, 2));
+        let check_x = x + step_x;
+        let check_y = y + step_y;
+        let weight = weight_map.get(check_x, check_y);
+        if weight < i64::MAX {
+            neighbors.push((
+                Position {
+                    x: check_x,
+                    y: check_y,
+                },
+                weight,
+            ));
         }
     }
     neighbors
@@ -196,80 +189,72 @@ fn neighbors_with_entities(
     let y = position.y;
     let mut neighbors = Vec::new();
     for (step_x, step_y) in &[(0, 1), (0, -1), (1, 0), (-1, 0)] {
-        let check_position = Position {
-            x: x + step_x,
-            y: y + step_y,
-        };
-
-        if let Some(entity) = entity_map.map.get(&check_position) {
+        let check_x = x + step_x;
+        let check_y = y + step_y;
+        let weight = weight_map.get(check_x, check_y);
+        if let Some(entity) = entity_map.map.get(&Position {
+            x: check_x,
+            y: check_y,
+        }) {
             if entity.is_none() {
-                if let Some(weight) = weight_map.map.get(&check_position) {
-                    if weight < &i64::MAX {
-                        neighbors.push((
-                            check_position,
-                            weight_map.map[&check_position],
-                        ));
-                    }
-                } else {
-                    // FIXME: This else block should be removed once weight_map
-                    // is fully implemented
-                    neighbors.push((check_position, 1));
+                if weight < i64::MAX {
+                    neighbors.push((
+                        Position {
+                            x: check_x,
+                            y: check_y,
+                        },
+                        weight,
+                    ));
                 }
+            } else {
+                continue;
             }
         } else {
             // FIXME: This else block should be removed once entity_map
             // is fully implemented
-            if let Some(weight) = weight_map.map.get(&check_position) {
-                if weight < &i64::MAX {
-                    neighbors.push((
-                        check_position,
-                        weight_map.map[&check_position],
-                    ));
-                }
-            } else {
-                // FIXME: This else block should be removed once weight_map
-                // is fully implemented
-                neighbors.push((check_position, 1));
+            if weight < i64::MAX {
+                neighbors.push((
+                    Position {
+                        x: check_x,
+                        y: check_y,
+                    },
+                    weight,
+                ));
             }
         }
     }
     for (step_x, step_y) in &[(1, 1), (-1, -1), (1, -1), (-1, 1)] {
-        let check_position = Position {
-            x: x + step_x,
-            y: y + step_y,
-        };
-        if let Some(entity) = entity_map.map.get(&check_position) {
+        let check_x = x + step_x;
+        let check_y = y + step_y;
+        let weight = weight_map.get(check_x, check_y);
+        if let Some(entity) = entity_map.map.get(&Position {
+            x: check_x,
+            y: check_y,
+        }) {
             if entity.is_none() {
-                if let Some(weight) = weight_map.map.get(&check_position) {
-                    if weight < &i64::MAX {
-                        neighbors.push((
-                            check_position,
-                            ((weight_map.map[&check_position] as f64)
-                                * 2_f64.sqrt())
-                                as i64,
-                        ));
-                    }
-                } else {
-                    // FIXME: This else block should be removed once weight_map
-                    // is fully implemented
-                    neighbors.push((check_position, 2));
+                if weight < i64::MAX {
+                    neighbors.push((
+                        Position {
+                            x: check_x,
+                            y: check_y,
+                        },
+                        (weight as f64 * 2_f64.sqrt()) as i64,
+                    ));
                 }
+            } else {
+                continue;
             }
         } else {
             // FIXME: This else block should be removed once entity_map
             // is fully implemented
-            if let Some(weight) = weight_map.map.get(&check_position) {
-                if weight < &i64::MAX {
-                    neighbors.push((
-                        check_position,
-                        ((weight_map.map[&check_position] as f64)
-                            * 2_f64.sqrt()) as i64,
-                    ));
-                }
-            } else {
-                // FIXME: This else block should be removed once weight_map
-                // is fully implemented
-                neighbors.push((check_position, 2));
+            if weight < i64::MAX {
+                neighbors.push((
+                    Position {
+                        x: check_x,
+                        y: check_y,
+                    },
+                    (weight as f64 * 2_f64.sqrt()) as i64,
+                ));
             }
         }
     }
