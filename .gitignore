@@ -7,3 +7,6 @@ Cargo.lock
 .vscode
 .cargo
 /src/.vscode
+dprint.json
+UnusedCode
+debug.log
