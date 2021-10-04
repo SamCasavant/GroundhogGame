@@ -36,12 +36,12 @@ fn add_people(
     let mut x = 0;
 
     while x < 50 {
-        let xrange = RangeInclusive::new(0, 199);
-        let yrange = xrange.clone();
+        let x_range = RangeInclusive::new(0, 199);
+        let y_range = x_range.clone();
         let mut rng = rand::thread_rng();
         let position = engine::world::Position {
-            x: rng.gen_range(xrange),
-            y: rng.gen_range(yrange),
+            x: rng.gen_range(x_range),
+            y: rng.gen_range(y_range),
         };
         let destination = engine::world::Destination(engine::world::Position {
             x: 199,
@@ -67,12 +67,12 @@ fn add_people(
         x += 1;
     }
     while x < 100 {
-        let xrange = RangeInclusive::new(0, 199);
-        let yrange = xrange.clone();
+        let x_range = RangeInclusive::new(0, 199);
+        let y_range = x_range.clone();
         let mut rng = rand::thread_rng();
         let position = engine::world::Position {
-            x: rng.gen_range(xrange),
-            y: rng.gen_range(yrange),
+            x: rng.gen_range(x_range),
+            y: rng.gen_range(y_range),
         };
 
         let destination =
@@ -110,11 +110,11 @@ fn new_destination(
     >,
 ) {
     for entity in query.iter() {
-        let xrange = RangeInclusive::new(0, 199);
-        let yrange = xrange.clone();
+        let x_range = RangeInclusive::new(0, 199);
+        let y_range = x_range.clone();
         let mut rng = rand::thread_rng();
-        let x = rng.gen_range(xrange);
-        let y = rng.gen_range(yrange);
+        let x = rng.gen_range(x_range);
+        let y = rng.gen_range(y_range);
         let destination =
             engine::world::Destination(engine::world::Position { x, y });
         commands.entity(entity).insert(destination);

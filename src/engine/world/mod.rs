@@ -5,7 +5,6 @@
 // Note: Support for bevy_ecs_tilemap/tiled_map to be deprecated in future
 //
 
-use std::collections::HashMap;
 use std::ops::Sub;
 
 use bevy::prelude::*;
@@ -96,9 +95,9 @@ impl TileWeightMap {
     ) -> i64 {
         if 0 <= x && x < self.width && 0 <= y && y < self.height {
             let index = (y * self.width + x) as usize;
-            return self.map[index];
+            self.map[index]
         } else {
-            return i64::MAX;
+            i64::MAX
         }
     }
     pub fn set(
@@ -108,7 +107,7 @@ impl TileWeightMap {
         weight: i64,
     ) {
         if 0 <= x && x < self.width && 0 <= y && y < self.height {
-            let index = (y * self.width + x) as usize - 1;
+            let index = (y * self.width + x) as usize;
             self.map[index] = weight;
         } else {
             panic!("Writing weight to tile outside of map.")
@@ -167,12 +166,12 @@ impl Plugin for WorldPlugin {
         &self,
         app: &mut AppBuilder,
     ) {
-        const width: i64 = 200;
-        const height: i64 = 200;
+        const WIDTH: i64 = 200;
+        const HEIGHT: i64 = 200;
         app
             //Tilemap
-            .insert_resource(TileWeightMap::new(width, height))
-            .insert_resource(TileEntityMap::new(width, height))
+            .insert_resource(TileWeightMap::new(WIDTH, HEIGHT))
+            .insert_resource(TileEntityMap::new(WIDTH, HEIGHT))
             //Window
             .insert_resource(WindowDescriptor {
                 width: 1270.0,

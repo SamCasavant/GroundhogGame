@@ -37,14 +37,16 @@ pub fn local_avoidance(
     for (/* entity, */ position, mut path) in query.iter_mut() {
         let mut nearby_entities = Vec::new();
         for near_position in position.get_range(1, 1) {
-            match entity_map.get(near_position.x, near_position.y) {
-                Some(entity) => nearby_entities.push(entity),
-                None => (),
+            if let Some(entity) =
+                entity_map.get(near_position.x, near_position.y)
+            {
+                nearby_entities.push(entity)
             }
         }
         if !nearby_entities.is_empty() {
+            // TODO: Cleanup during rewrite
             let mut index = 2;
-            if path.0.len() < 1 {
+            if path.0.is_empty() {
                 continue;
             } else if path.0.len() < 2 {
                 index = 0;
@@ -53,7 +55,7 @@ pub fn local_avoidance(
             }
             let local_path = get_path_around_entities(
                 position,
-                &mut path.0[index],
+                &path.0[index],
                 &weight_map,
                 &entity_map,
             );
@@ -173,9 +175,8 @@ fn get_path_around_entities(
             path.push(step);
         }
         path.remove(0);
-        return Some(path);
+        Some(path)
     } else {
-        println!("Could not find path");
         None
     }
 }
@@ -193,18 +194,14 @@ fn neighbors_with_entities(
         let check_y = y + step_y;
         let weight = weight_map.get(check_x, check_y);
         let entity = entity_map.get(check_x, check_y);
-        if entity.is_none() {
-            if weight < i64::MAX {
-                neighbors.push((
-                    Position {
-                        x: check_x,
-                        y: check_y,
-                    },
-                    weight,
-                ));
-            }
-        } else {
-            continue;
+        if entity.is_none() && weight < i64::MAX {
+            neighbors.push((
+                Position {
+                    x: check_x,
+                    y: check_y,
+                },
+                weight,
+            ));
         }
     }
     for (step_x, step_y) in &[(1, 1), (-1, -1), (1, -1), (-1, 1)] {
@@ -212,18 +209,14 @@ fn neighbors_with_entities(
         let check_y = y + step_y;
         let weight = weight_map.get(check_x, check_y);
         let entity = entity_map.get(check_x, check_y);
-        if entity.is_none() {
-            if weight < i64::MAX {
-                neighbors.push((
-                    Position {
-                        x: check_x,
-                        y: check_y,
-                    },
-                    (weight as f64 * 2_f64.sqrt()) as i64,
-                ));
-            }
-        } else {
-            continue;
+        if entity.is_none() && weight < i64::MAX {
+            neighbors.push((
+                Position {
+                    x: check_x,
+                    y: check_y,
+                },
+                (weight as f64 * 2_f64.sqrt()) as i64,
+            ));
         }
     }
     neighbors
