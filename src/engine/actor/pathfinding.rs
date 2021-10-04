@@ -37,7 +37,7 @@ pub fn local_avoidance(
     for (/* entity, */ position, mut path) in query.iter_mut() {
         let mut nearby_entities = Vec::new();
         for near_position in position.get_range(1, 1) {
-            match entity_map.map.get(&near_position) {
+            match entity_map.get(near_position.x, near_position.y) {
                 Some(entity) => nearby_entities.push(entity),
                 None => (),
             }
@@ -192,26 +192,8 @@ fn neighbors_with_entities(
         let check_x = x + step_x;
         let check_y = y + step_y;
         let weight = weight_map.get(check_x, check_y);
-        if let Some(entity) = entity_map.map.get(&Position {
-            x: check_x,
-            y: check_y,
-        }) {
-            if entity.is_none() {
-                if weight < i64::MAX {
-                    neighbors.push((
-                        Position {
-                            x: check_x,
-                            y: check_y,
-                        },
-                        weight,
-                    ));
-                }
-            } else {
-                continue;
-            }
-        } else {
-            // FIXME: This else block should be removed once entity_map
-            // is fully implemented
+        let entity = entity_map.get(check_x, check_y);
+        if entity.is_none() {
             if weight < i64::MAX {
                 neighbors.push((
                     Position {
@@ -221,32 +203,16 @@ fn neighbors_with_entities(
                     weight,
                 ));
             }
+        } else {
+            continue;
         }
     }
     for (step_x, step_y) in &[(1, 1), (-1, -1), (1, -1), (-1, 1)] {
         let check_x = x + step_x;
         let check_y = y + step_y;
         let weight = weight_map.get(check_x, check_y);
-        if let Some(entity) = entity_map.map.get(&Position {
-            x: check_x,
-            y: check_y,
-        }) {
-            if entity.is_none() {
-                if weight < i64::MAX {
-                    neighbors.push((
-                        Position {
-                            x: check_x,
-                            y: check_y,
-                        },
-                        (weight as f64 * 2_f64.sqrt()) as i64,
-                    ));
-                }
-            } else {
-                continue;
-            }
-        } else {
-            // FIXME: This else block should be removed once entity_map
-            // is fully implemented
+        let entity = entity_map.get(check_x, check_y);
+        if entity.is_none() {
             if weight < i64::MAX {
                 neighbors.push((
                     Position {
@@ -256,6 +222,8 @@ fn neighbors_with_entities(
                     (weight as f64 * 2_f64.sqrt()) as i64,
                 ));
             }
+        } else {
+            continue;
         }
     }
     neighbors

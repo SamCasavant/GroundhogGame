@@ -73,13 +73,15 @@ impl PartialEq<Position> for Destination {
 
 #[derive(Default)]
 pub struct TileWeightMap {
-    pub map: Vec<i64>,
+    pub map: Vec<i64>, /* Should this be transitioned to fixed size array,
+                        * because we know the size at compile time? */
     width:   i64,
     height:  i64,
     /* Maps position to weight (i64)
      * i64::MAX is treated as an obstacle */
 }
 impl TileWeightMap {
+    // consider morton encoding if this is slow
     pub fn new(
         width: i64,
         height: i64,
@@ -103,11 +105,11 @@ impl TileWeightMap {
         &mut self,
         x: i64,
         y: i64,
-        val: i64,
+        weight: i64,
     ) {
         if 0 <= x && x < self.width && 0 <= y && y < self.height {
             let index = (y * self.width + x) as usize - 1;
-            self.map[index] = val;
+            self.map[index] = weight;
         } else {
             panic!("Writing weight to tile outside of map.")
         }
@@ -115,7 +117,47 @@ impl TileWeightMap {
 }
 
 pub struct TileEntityMap {
-    pub map: HashMap<Position, Option<Entity>>,
+    pub map: Vec<Option<Entity>>, /* Should this be transitioned to fixed
+                                   * size array
+                                   * * because we know the size at compile
+                                   *   time? */
+    width:   i64,
+    height:  i64,
+}
+impl TileEntityMap {
+    // Consider morton encoding if this is slow
+    pub fn new(
+        width: i64,
+        height: i64,
+    ) -> Self {
+        let map = vec![None; (width * height) as usize];
+        Self { map, width, height }
+    }
+    pub fn get(
+        &self,
+        x: i64,
+        y: i64,
+    ) -> Option<Entity> {
+        if 0 <= x && x < self.width && 0 <= y && y < self.height {
+            let index = (y * self.width + x) as usize;
+            self.map[index]
+        } else {
+            None
+        }
+    }
+    pub fn set(
+        &mut self,
+        x: i64,
+        y: i64,
+        entity: Option<Entity>,
+    ) {
+        if 0 <= x && x < self.width && 0 <= y && y < self.height {
+            let index = (y * self.width + x) as usize;
+            self.map[index] = entity;
+        } else {
+            panic!("Writing entity to tile outside of map: {:?}, {:?}", x, y)
+        }
+    }
 }
 
 pub struct WorldPlugin;
@@ -125,12 +167,12 @@ impl Plugin for WorldPlugin {
         &self,
         app: &mut AppBuilder,
     ) {
+        const width: i64 = 200;
+        const height: i64 = 200;
         app
             //Tilemap
-            .insert_resource(TileWeightMap::new(200, 200))
-            .insert_resource(TileEntityMap {
-                map: HashMap::<Position, Option<Entity>>::new()
-            })
+            .insert_resource(TileWeightMap::new(width, height))
+            .insert_resource(TileEntityMap::new(width, height))
             //Window
             .insert_resource(WindowDescriptor {
                 width: 1270.0,

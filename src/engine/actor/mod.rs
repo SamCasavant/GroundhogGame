@@ -182,14 +182,19 @@ pub fn move_actor(
                 }
                 _ => (),
             }
-            // FIXME: These .or_insert()s are a temporary measure, remove when
-            // entity_map is fully implemented.
+            // Destructure for convenience
+            let old_x = position.x;
+            let old_y = position.y;
+
+            let new_x = next_step.x;
+            let new_y = next_step.y;
+
             // Mark previous tile as unoccupied
-            entity_map.map.entry(*position).or_insert(None);
+            entity_map.set(old_x, old_y, None);
             // Move the actor
             *position = next_step;
             // Mark next tile as occupied
-            entity_map.map.entry(*position).or_insert(Some(entity));
+            entity_map.set(new_x, new_y, Some(entity));
             // Set time of next action
             *timer = game_time.copy_and_tick(1);
         } else {

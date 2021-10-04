@@ -13,7 +13,7 @@ mod engine;
 fn main() {
     PrettyTrace::new().on();
     App::build()
-        .insert_resource(ClearColor(Color::rgb(0.0, 0.0, 0.1)))
+        .insert_resource(ClearColor(Color::rgb(0.0, 0.0, 0.05)))
         .add_plugin(FrameTimeDiagnosticsPlugin::default())
         .add_plugin(LogDiagnosticsPlugin::default())
         .add_plugins(DefaultPlugins)
@@ -36,15 +36,17 @@ fn add_people(
     let mut x = 0;
 
     while x < 50 {
-        let xrange = RangeInclusive::new(0, 180);
+        let xrange = RangeInclusive::new(0, 199);
         let yrange = xrange.clone();
         let mut rng = rand::thread_rng();
         let position = engine::world::Position {
             x: rng.gen_range(xrange),
             y: rng.gen_range(yrange),
         };
-        let destination =
-            engine::world::Destination(engine::world::Position { x: 60, y: 0 });
+        let destination = engine::world::Destination(engine::world::Position {
+            x: 199,
+            y: 199,
+        });
 
         let sprite_sheet = engine::render::init_sprite_sheet(
             &"sprites/NPC1 (2).png".to_owned(),
@@ -65,7 +67,7 @@ fn add_people(
         x += 1;
     }
     while x < 100 {
-        let xrange = RangeInclusive::new(-90, 90);
+        let xrange = RangeInclusive::new(0, 199);
         let yrange = xrange.clone();
         let mut rng = rand::thread_rng();
         let position = engine::world::Position {
@@ -96,7 +98,7 @@ fn add_people(
     }
 }
 
-// This will be replaced by an agent module in the near future
+// This should be moved to engine::actor module
 fn new_destination(
     mut commands: Commands,
     query: Query<
@@ -108,7 +110,7 @@ fn new_destination(
     >,
 ) {
     for entity in query.iter() {
-        let xrange = RangeInclusive::new(0, 100);
+        let xrange = RangeInclusive::new(0, 199);
         let yrange = xrange.clone();
         let mut rng = rand::thread_rng();
         let x = rng.gen_range(xrange);
