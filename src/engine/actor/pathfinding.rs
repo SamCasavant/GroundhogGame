@@ -27,82 +27,25 @@ pub fn local_avoidance(
     weight_map: Res<TileWeightMap>,
     mut query: Query<(Entity, &Position, &mut Path, &Destination)>,
 ) {
-    // Path Wars: Episode IV
-    // It is a period of civil war.
-    // Bounding get_path has fixed the stalling issue...
-    // But entities still can't find a path to an occupied destination.
-    // The empire needs to be pathing to the position that is closest to the
-    // destination. But this doesn't mesh well with current logic.
-    // The empire will begin a rewrite of this file.
-    // Powerful enough to destroy an entire planet, its completion spells
-    // certain doom for the champions of freedom.
-
+    // This system routes an entity's path around local entities. It first
+    // checks if there are neighbors in the vicinity of an entity. If there
+    // are, it checks to see if the next step in the path collides with any
+    // entities. If it does, it finds a destination that can be pathed to, and
+    // paths to that. Failing that, it gives up.
     for (_entity, position, mut path, destination) in query.iter_mut() {
-        let mut nearby_entities = Vec::new();
-        for near_position in position.get_range(1, 1) {
-            if let Some(entity) =
-                entity_map.get(near_position.x, near_position.y)
-            {
-                nearby_entities.push(entity)
-            }
-        }
-        if !nearby_entities.is_empty() {
-            // Handle edge cases
-            if path.0.len() == 0 {
-                panic!(
-                    "Path should never be empty during local avoidance, \
-                     something is happening in the wrong order."
-                )
-            } else if path.0.len() == 1
+        let nearby_entities = nearby_entities(position, 1, &entity_map);
+        if nearby_entities.is_some() {
+            if path.0.len() <= 1
                 && entity_map.get(path.0[0].x, path.0[0].y).is_some()
+            // Panics on path of length 0, which are not supposed to exist here
             {
-                // If the end of the path is one step away and it's occupied,
-                // hold off until next cycle. Otherwise, we don't have to do
-                // anything.
                 path.0 = Vec::<Position>::new();
-            } else if path.0.len() == 2
-                && entity_map.get(path.0[0].x, path.0[0].y).is_some()
-            {
-                // If the end of the path is two steps away, and the next step
-                // is occupied, see if another neighbor of the end is unoccupied
-                // and make that the first step. If there is no such neighbor,
-                // hold off until the next cycle. Otherwise, we don't have to do
-                // anything.
-                let current_neighbors =
-                    neighbors_with_entities(position, &weight_map, &entity_map);
-                let target_neighbors = neighbors_with_entities(
-                    &path.0[1],
-                    &weight_map,
-                    &entity_map,
-                );
-                let mut local_destination = None;
-                let mut min_weight = i64::MAX;
-                for neighbor in target_neighbors {
-                    // This could maybe be a bit more efficient, we're
-                    // potentially searching 8 elements of each vector when we
-                    // only need to check 3. Shouldn't need to optimize this
-                    // intersect though, as n will always be small.
-                    if current_neighbors.contains(&neighbor) {
-                        if neighbor.1 < min_weight {
-                            local_destination = Some(neighbor.0);
-                            min_weight = neighbor.1;
-                        }
-                    }
-                }
-                if local_destination.is_some() {
-                    path.0[0] = local_destination.unwrap();
-                } else {
-                    path.0 = Vec::<Position>::new()
-                }
             } else if entity_map.get(path.0[0].x, path.0[0].y).is_some() {
-                // If the end of the path is three or more steps away and the
-                // next step is occupied, things get real damn complicated.
-                // Set a temporary destination at the third step of the path
-                // If that destination can be pathed to, use that path instead
-                // of our current first few steps. Otherwise,
-                // find the position that optimizes for distance from final
-                // destination and path to that instead.
-                let mut local_destination = path.0[2];
+                let mut local_destination = if path.0.len() == 2 {
+                    path.0[1]
+                } else {
+                    path.0[2]
+                };
                 let mut valid_destination = true;
                 if entity_map
                     .get(local_destination.x, local_destination.y)
@@ -124,9 +67,6 @@ pub fn local_avoidance(
                             local_destination = neighbor.0;
                         }
                     }
-                    if !valid_destination {
-                        println!("How often does this come up?");
-                    }
                 }
                 if valid_destination {
                     let local_path = get_path_around_entities(
@@ -144,7 +84,27 @@ pub fn local_avoidance(
                     }
                 }
             }
+        } else {
+            path.0 = Vec::<Position>::new()
         }
+    }
+}
+
+fn nearby_entities(
+    position: &Position,
+    range: i64,
+    entity_map: &Res<TileEntityMap>,
+) -> Option<Vec<Entity>> {
+    let mut nearby_entities = Vec::new();
+    for near_position in position.get_range(range, range) {
+        if let Some(entity) = entity_map.get(near_position.x, near_position.y) {
+            nearby_entities.push(entity);
+        }
+    }
+    if nearby_entities.is_empty() {
+        None
+    } else {
+        Some(nearby_entities)
     }
 }
 
@@ -314,92 +274,3 @@ fn diagonal_distance(
     distance_mult * (dx + dy)
         + (distance_mult_two - 2 * distance_mult) * min(dx, dy)
 }
-
-// pub fn plan_path(
-//     position: Position,
-//     // Who, day and night, must scramble for a living, feed a wife and
-//     // children, say his daily prayers? And who has the right, as master of
-// the     // house, to have the final word at home?
-//     target_pos: Position, /* TODO: Add a target_pos wrapper to make this
-//                            * joke work. Find a
-//                            * good reason. */
-//     weight_map: Res<TileWeightMap>,
-//     entity_map: Res<TileEntityMap>,
-// ) -> Option<Path> {
-//     let mut to_see = BinaryHeap::new();
-//     to_see.push(SmallestCostHolder {
-//         estimated_cost: 0,
-//         cost:           0,
-//         index:          0,
-//     });
-//     let mut parents = FxIndexMap::default();
-//     let mut steps =
-//         neighbors_with_weights_avoid_entities(position, weight_map,
-// entity_map);
-
-//     let mut paths = Vec::new();
-//     for step in steps {
-//         paths.push((step.0, Path(vec![position, step.1]), step.1))
-//     }
-//     for path in paths {
-//         path.0 += proximity_heuristic(position, target_pos);
-//     }
-//     &paths.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap());
-//     loop {
-//         let path = paths[0];
-//         let position = path.2;
-//         steps = neighbors_with_weights(position, weight_map)
-//     }
-//     return Some(Path(Vec::new()));
-// }
-
-// fn neighbors_with_weights_avoid_entities(
-//     position: Position,
-//     weight_map: Res<TileWeightMap>,
-//     entity_map: Res<TileEntityMap>,
-// ) -> Vec<(i64, Position)> {
-//     let x = position.x;
-//     let y = position.y;
-//     let mut neighbors = Vec::new();
-//     for (step_x, step_y) in &[(0, 1), (0, -1), (1, 0), (-1, 0)] {
-//         if let Some(weight) = weight_map.map.get(&position) {
-//             if weight < &i64::MAX {
-//                 if let Some(entity) = entity_map.map.get(&position) {
-//                     neighbors.push((weight_map.map[&position], Position {
-//                         x: x + step_x,
-//                         y: y + step_y,
-//                     }));
-//                 }
-//             }
-//         }
-//     }
-//     for (step_x, step_y) in &[(1, 1), (-1, -1), (1, -1), (-1, 1)] {
-//         if let Some(weight) = weight_map.map.get(&position) {
-//             if weight < &i64::MAX {
-//                 if let Some(entity) = entity_map.map.get(&position) {
-//                     neighbors.push((weight_map.map[&position], Position {
-//                         x: x + step_x,
-//                         y: y + step_y,
-//                     }));
-//                 }
-//                 if let Some(entity) = entity_map.map.get(&position) {
-//                     neighbors.push((weight_map.map[&position], Position {
-//                         x: x + step_x,
-//                         y: y + step_y,
-//                     }));
-//                 }
-//             }
-//         }
-//     }
-//     neighbors
-// }
-
-// fn proximity_heuristic(
-//     position: Position,
-//     destination: Position,
-// ) -> i64 {
-//     // Pythagorean distance
-//     (((destination.x - position.x).pow(2) + (destination.y -
-// position.y).pow(2))         as f64)
-//         .sqrt() as i64
-// }

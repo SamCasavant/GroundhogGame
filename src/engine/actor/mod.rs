@@ -166,7 +166,7 @@ pub fn move_actor(
             commands.entity(entity).remove::<pathfinding::Path>();
         } else if *timer <= *game_time {
             let next_step = path.0.remove(0);
-            if path.0.len() == 0 {
+            if path.0.is_empty() {
                 commands.entity(entity).remove::<pathfinding::Path>();
             }
             let next_direction = next_step - *position;
