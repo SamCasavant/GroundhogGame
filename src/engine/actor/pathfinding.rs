@@ -47,7 +47,6 @@ pub fn local_avoidance(
             }
         }
         if !nearby_entities.is_empty() {
-            //=============================================================//
             // Handle edge cases
             if path.0.len() == 0 {
                 panic!(
@@ -61,7 +60,9 @@ pub fn local_avoidance(
                 // hold off until next cycle. Otherwise, we don't have to do
                 // anything.
                 path.0 = Vec::<Position>::new();
-            } else if entity_map.get(path.0[0].x, path.0[0].y).is_some() {
+            } else if path.0.len() == 2
+                && entity_map.get(path.0[0].x, path.0[0].y).is_some()
+            {
                 // If the end of the path is two steps away, and the next step
                 // is occupied, see if another neighbor of the end is unoccupied
                 // and make that the first step. If there is no such neighbor,
@@ -93,60 +94,56 @@ pub fn local_avoidance(
                 } else {
                     path.0 = Vec::<Position>::new()
                 }
-            } // else {
-              // If the end of the path is three or more steps away,
-              //}
-              // let mut local_destination = path.0[index];
-              // if entity_map
-              //     .get(local_destination.x, local_destination.y)
-              //     .is_some()
-              // {
-              //     // Shouldn't need to check tile weight, because we do that
-              //     // earlier
-              //     let mut min_distance = i64::MAX;
-              //     let mut x_range = 1;
-              //     let mut y_range = 1;
-              //     let mut found_new_destination = false;
-              //     let mut best_destination = Position { x: -1, y: -1 }; //
-              // Hacky     while !found_new_destination {
-              //         for check_destination in
-              //             destination.0.get_range(x_range, y_range)
-              //         {
-              //             let x = check_destination.x;
-              //             let y = check_destination.y;
-              //             if weight_map.get(x, y) != i64::MAX {
-              //                 if entity_map.get(x, y).is_none() {
-              //                     if diagonal_distance(
-              //                         &Position { x, y },
-              //                         &destination.0,
-              //                     ) < min_distance
-              //                     {
-              //                         let best_destination = Position { x, y
-              // };                     }
-              //                 }
-              //             }
-              //             if best_destination != (Position { x: -1, y: -1 })
-              // {                 // Hacky
-              //                 local_destination = best_destination;
-              //                 found_new_destination = true;
-              //             }
-              //         }
-              //     }
-              //============================================================//
-              // TODO: Cleanup during rewrite
-
-            // let local_path = get_path_around_entities(
-            //     position,
-            //     &path.0[index],
-            //     &weight_map,
-            //     &entity_map,
-            // );
-            // path.0 = match local_path {
-            //     Some(mut p) => {
-            //         p.extend(path.0[index + 1..].iter().cloned());
-            //         p
-            //     }
-            //     None => vec![*position],
+            } else if entity_map.get(path.0[0].x, path.0[0].y).is_some() {
+                // If the end of the path is three or more steps away and the
+                // next step is occupied, things get real damn complicated.
+                // Set a temporary destination at the third step of the path
+                // If that destination can be pathed to, use that path instead
+                // of our current first few steps. Otherwise,
+                // find the position that optimizes for distance from final
+                // destination and path to that instead.
+                let mut local_destination = path.0[2];
+                let mut valid_destination = true;
+                if entity_map
+                    .get(local_destination.x, local_destination.y)
+                    .is_some()
+                {
+                    valid_destination = false;
+                    let min_weight = weight_map.get(position.x, position.y);
+                    let min_distance =
+                        diagonal_distance(position, &destination.0);
+                    for neighbor in neighbors_with_entities(
+                        &local_destination,
+                        &weight_map,
+                        &entity_map,
+                    ) {
+                        let weight = neighbor.1;
+                        let distance = diagonal_distance(position, &neighbor.0);
+                        if weight * distance < min_weight * min_distance {
+                            valid_destination = true;
+                            local_destination = neighbor.0;
+                        }
+                    }
+                    if !valid_destination {
+                        println!("How often does this come up?");
+                    }
+                }
+                if valid_destination {
+                    let local_path = get_path_around_entities(
+                        position,
+                        &local_destination,
+                        &weight_map,
+                        &entity_map,
+                    );
+                    path.0 = match local_path {
+                        Some(mut p) => {
+                            p.extend(path.0[3..].iter().cloned());
+                            p
+                        }
+                        None => vec![*position],
+                    }
+                }
+            }
         }
     }
 }
