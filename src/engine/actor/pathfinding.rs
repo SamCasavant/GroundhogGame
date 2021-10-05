@@ -186,37 +186,17 @@ pub fn neighbors_with_weights(
     position: &Position,
     weight_map: &Res<TileWeightMap>,
 ) -> Vec<(Position, i64)> {
-    let x = position.x;
-    let y = position.y;
     let mut neighbors = Vec::new();
-    for (step_x, step_y) in &[(0, 1), (0, -1), (1, 0), (-1, 0)] {
-        // TODO: Figure out a better way to write lines like these^, or accept
-        // that this is the best I can do and remove this todo.
-        let check_x = x + step_x;
-        let check_y = y + step_y;
-        let weight = weight_map.get(check_x, check_y);
+    for Position { x, y } in position.side_neighbors() {
+        let weight = weight_map.get(x, y);
         if weight < i64::MAX {
-            neighbors.push((
-                Position {
-                    x: check_x,
-                    y: check_y,
-                },
-                weight,
-            ));
+            neighbors.push((Position { x, y }, weight));
         }
     }
-    for (step_x, step_y) in &[(1, 1), (-1, -1), (1, -1), (-1, 1)] {
-        let check_x = x + step_x;
-        let check_y = y + step_y;
-        let weight = weight_map.get(check_x, check_y);
+    for Position { x, y } in position.corner_neighbors() {
+        let weight = ((weight_map.get(x, y) as f64) * 2_f64.sqrt()) as i64;
         if weight < i64::MAX {
-            neighbors.push((
-                Position {
-                    x: check_x,
-                    y: check_y,
-                },
-                weight,
-            ));
+            neighbors.push((Position { x, y }, weight));
         }
     }
     neighbors
@@ -257,37 +237,19 @@ fn neighbors_except_entities(
     weight_map: &Res<TileWeightMap>,
     entity_map: &Res<TileEntityMap>,
 ) -> Vec<(Position, i64)> {
-    let x = position.x;
-    let y = position.y;
     let mut neighbors = Vec::new();
-    for (step_x, step_y) in &[(0, 1), (0, -1), (1, 0), (-1, 0)] {
-        let check_x = x + step_x;
-        let check_y = y + step_y;
-        let weight = weight_map.get(check_x, check_y);
-        let entity = entity_map.get(check_x, check_y);
+    for Position { x, y } in position.side_neighbors() {
+        let weight = weight_map.get(x, y);
+        let entity = entity_map.get(x, y);
         if entity.is_none() && weight < i64::MAX {
-            neighbors.push((
-                Position {
-                    x: check_x,
-                    y: check_y,
-                },
-                weight,
-            ));
+            neighbors.push((Position { x, y }, weight));
         }
     }
-    for (step_x, step_y) in &[(1, 1), (-1, -1), (1, -1), (-1, 1)] {
-        let check_x = x + step_x;
-        let check_y = y + step_y;
-        let weight = weight_map.get(check_x, check_y);
-        let entity = entity_map.get(check_x, check_y);
+    for Position { x, y } in position.corner_neighbors() {
+        let weight = ((weight_map.get(x, y) as f64) * 2_f64.sqrt()) as i64; // TODO: Investigate if I can avoid this double casting
+        let entity = entity_map.get(x, y);
         if entity.is_none() && weight < i64::MAX {
-            neighbors.push((
-                Position {
-                    x: check_x,
-                    y: check_y,
-                },
-                (weight as f64 * 2_f64.sqrt()) as i64,
-            ));
+            neighbors.push((Position { x, y }, weight));
         }
     }
     neighbors

@@ -21,17 +21,37 @@ impl Position {
     pub fn neighbors(
         &self,
         radius: i64,
-    ) -> Vec<Position> {
-        let mut range = Vec::new();
+    ) -> Vec<Self> {
+        let mut neighbors = Vec::new();
         for x in (self.x - radius)..=(self.x + radius) {
             for y in (self.y - radius)..=(self.y + radius) {
                 let position = Position { x, y };
                 if !(*self == position) {
-                    range.push(position)
+                    neighbors.push(position)
                 }
             }
         }
-        range
+        neighbors
+    }
+    pub fn side_neighbors(&self) -> Vec<Self> {
+        let mut neighbors = Vec::new();
+        for (step_x, step_y) in &[(0, 1), (0, -1), (1, 0), (-1, 0)] {
+            neighbors.push(Position {
+                x: self.x + step_x,
+                y: self.y + step_y,
+            });
+        }
+        neighbors
+    }
+    pub fn corner_neighbors(&self) -> Vec<Self> {
+        let mut neighbors = Vec::new();
+        for (step_x, step_y) in &[(1, 1), (-1, -1), (1, -1), (-1, 1)] {
+            neighbors.push(Position {
+                x: self.x + step_x,
+                y: self.y + step_y,
+            });
+        }
+        neighbors
     }
 }
 impl Sub for Position {
