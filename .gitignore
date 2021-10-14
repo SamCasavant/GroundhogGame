@@ -10,3 +10,4 @@ Cargo.lock
 dprint.json
 UnusedCode
 debug.log
+fuzz

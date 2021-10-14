@@ -37,6 +37,7 @@ pub fn spawn_actor(
             hour:   6,
             minute: 0,
             second: 0,
+            frame:  0,
         }));
 }
 

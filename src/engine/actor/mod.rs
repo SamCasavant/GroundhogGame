@@ -53,6 +53,7 @@ impl Plugin for ActorPlugin {
                 hour:   6,
                 minute: 0,
                 second: 0,
+                frame:  0,
             },
         )))
         .add_system(pathfinding::plan_path.system().label("preparation"))
@@ -88,7 +89,7 @@ fn choose_next_task(
         // eta
         match &routine.tasks {
             Some(tasks) => {
-                let priority = time.how_soon(tasks[0].time);
+                let priority = time.how_soon(tasks[0].time) / 60;
                 if priority > curtask.priority {
                     curtask = tasks[0].task;
                 }
@@ -120,7 +121,7 @@ fn animal_processes(
         for mut status in query.iter_mut() {
             status.hunger += 1;
         }
-        *timer = AnimalTimer(game_time.copy_and_tick(60));
+        *timer = AnimalTimer(game_time.copy_and_tick_seconds(60));
     }
 }
 
@@ -199,9 +200,9 @@ pub fn move_actor(
             // Mark next tile as occupied
             entity_map.set(new_x, new_y, Some(entity));
             // Set time of next action
-            *timer = game_time.copy_and_tick(1);
+            *timer = game_time.copy_and_tick_seconds(1);
         } else {
-            *timer = game_time.copy_and_tick(0);
+            *timer = game_time.copy_and_tick_seconds(0);
         }
         if *destination == *position {
             commands

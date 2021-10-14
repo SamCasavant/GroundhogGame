@@ -41,7 +41,13 @@ pub fn local_avoidance(
             {
                 path.0 = Vec::<Position>::new();
             } else if entity_map.get(path.0[0].x, path.0[0].y).is_some() {
-                let index = if path.0.len() == 2 { 1 } else { 2 };
+                let index = if path.0.len() == 2 {
+                    1
+                } else if path.0.len() == 3 {
+                    2
+                } else {
+                    3
+                };
                 let local_destination = path.0[index];
                 let valid_destination = best_nearest_valid_destination(
                     position,
@@ -216,7 +222,7 @@ fn get_path_around_entities(
         |p| {
             *p == *destination
                 || diagonal_distance(p, destination)
-                    > 100 * diagonal_distance(position, destination)
+                    > 4 * diagonal_distance(position, destination)
         },
     )
     .unwrap_or((vec![*position], 0));

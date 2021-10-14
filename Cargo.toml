@@ -19,6 +19,7 @@ tiled = { version = "0.9", default-features = false, optional = true }
 
 [profile.release]
 debug = true
+lto = "thin"
 
 [profile.dev.package."*"]
 opt-level = 3

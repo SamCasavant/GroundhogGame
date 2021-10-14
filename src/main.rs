@@ -35,7 +35,7 @@ fn add_people(
 ) {
     let mut x = 0;
 
-    while x < 50 {
+    while x < 1000 {
         let x_range = RangeInclusive::new(0, 199);
         let y_range = x_range.clone();
         let mut rng = rand::thread_rng();
@@ -66,7 +66,7 @@ fn add_people(
         );
         x += 1;
     }
-    while x < 100 {
+    while x < 2000 {
         let x_range = RangeInclusive::new(0, 199);
         let y_range = x_range.clone();
         let mut rng = rand::thread_rng();
@@ -75,8 +75,10 @@ fn add_people(
             y: rng.gen_range(y_range),
         };
 
-        let destination =
-            engine::world::Destination(engine::world::Position { x: 0, y: 0 });
+        let destination = engine::world::Destination(engine::world::Position {
+            x: 20,
+            y: 20,
+        });
 
         let sprite_sheet = engine::render::init_sprite_sheet(
             &"sprites/NPC1 (2).png".to_owned(),

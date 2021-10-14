@@ -174,8 +174,8 @@ impl Plugin for WorldPlugin {
         &self,
         app: &mut AppBuilder,
     ) {
-        const WIDTH: i64 = 200;
-        const HEIGHT: i64 = 200;
+        const WIDTH: i64 = 400;
+        const HEIGHT: i64 = 400;
         app
             //Tilemap
             .insert_resource(TileWeightMap::new(WIDTH, HEIGHT))
