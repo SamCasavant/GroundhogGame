@@ -35,7 +35,7 @@ fn add_people(
 ) {
     let mut x = 0;
 
-    while x < 1000 {
+    while x < 50 {
         let x_range = RangeInclusive::new(0, 199);
         let y_range = x_range.clone();
         let mut rng = rand::thread_rng();
@@ -47,6 +47,10 @@ fn add_people(
             x: 199,
             y: 199,
         });
+        let inventory = engine::actor::Inventory {
+            contents: Vec::new(),
+            capacity: 5,
+        };
 
         let sprite_sheet = engine::render::init_sprite_sheet(
             &"sprites/NPC1 (2).png".to_owned(),
@@ -62,11 +66,12 @@ fn add_people(
             },
             position,
             destination,
+            inventory,
             sprite_sheet,
         );
         x += 1;
     }
-    while x < 2000 {
+    while x < 100 {
         let x_range = RangeInclusive::new(0, 199);
         let y_range = x_range.clone();
         let mut rng = rand::thread_rng();
@@ -79,6 +84,10 @@ fn add_people(
             x: 20,
             y: 20,
         });
+        let inventory = engine::actor::Inventory {
+            contents: Vec::new(),
+            capacity: 5,
+        };
 
         let sprite_sheet = engine::render::init_sprite_sheet(
             &"sprites/NPC1 (2).png".to_owned(),
@@ -94,6 +103,7 @@ fn add_people(
             },
             position,
             destination,
+            inventory,
             sprite_sheet,
         );
         x += 1;

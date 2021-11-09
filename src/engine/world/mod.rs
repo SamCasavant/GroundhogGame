@@ -1,15 +1,18 @@
-// Draws the world map and handles pathfinding
+// Draws the world map and tracks positions
 //
 // Drawing:
 // Uses bevy_ecs_tilemap to draw tiles on screen.
 // Note: Support for bevy_ecs_tilemap/tiled_map to be deprecated in future
 //
 
+use std::cmp::min;
 use std::ops::Sub;
 
 use bevy::prelude::*;
 use bevy_ecs_tilemap::prelude::*;
+use pathfinding::prelude::absdiff;
 
+pub mod item;
 pub mod time;
 
 #[derive(Debug, Copy, Clone, PartialEq, Hash, Eq)]
@@ -52,6 +55,17 @@ impl Position {
             });
         }
         neighbors
+    }
+    pub fn diagonal_distance(
+        &self,
+        other: &Position,
+    ) -> i64 {
+        let distance_mult = 1_i64;
+        let distance_mult_two = 1_i64;
+        let dx = absdiff(self.x, other.x);
+        let dy = absdiff(self.y, other.y);
+        distance_mult * (dx + dy)
+            + (distance_mult_two - 2 * distance_mult) * min(dx, dy)
     }
 }
 impl Sub for Position {

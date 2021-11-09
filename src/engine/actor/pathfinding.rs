@@ -120,11 +120,11 @@ fn best_nearest_valid_destination(
         return Some(*target);
     }
     let min_weight = weight_map.get(position.x, position.y);
-    let min_distance = diagonal_distance(position, destination);
+    let min_distance = position.diagonal_distance(destination);
     let mut valid_destination = None;
     for neighbor in neighbors_except_entities(target, weight_map, entity_map) {
         let weight = neighbor.1;
-        let distance = diagonal_distance(target, &neighbor.0);
+        let distance = target.diagonal_distance(&neighbor.0);
         if weight * distance < min_weight * min_distance {
             valid_destination = Some(neighbor.0);
         }
@@ -169,11 +169,11 @@ pub fn get_path(
     let plan = astar(
         position,
         |p| neighbors_with_weights(p, weight_map),
-        |p| diagonal_distance(p, destination),
+        |p| p.diagonal_distance(destination),
         |p| {
             *p == *destination
-                || diagonal_distance(p, destination)
-                    > 4 * diagonal_distance(position, destination)
+                || p.diagonal_distance(destination)
+                    > 4 * position.diagonal_distance(destination)
         },
     )
     .unwrap_or((vec![*position], 0));
@@ -218,11 +218,11 @@ fn get_path_around_entities(
     let plan = astar(
         position,
         |p| neighbors_except_entities(p, weight_map, entity_map),
-        |p| diagonal_distance(p, destination),
+        |p| p.diagonal_distance(destination),
         |p| {
             *p == *destination
-                || diagonal_distance(p, destination)
-                    > 4 * diagonal_distance(position, destination)
+                || p.diagonal_distance(destination)
+                    > 4 * position.diagonal_distance(destination)
         },
     )
     .unwrap_or((vec![*position], 0));
@@ -259,16 +259,4 @@ fn neighbors_except_entities(
         }
     }
     neighbors
-}
-
-fn diagonal_distance(
-    position: &Position,
-    destination: &Position,
-) -> i64 {
-    let distance_mult = 1_i64;
-    let distance_mult_two = 1_i64;
-    let dx = absdiff(position.x, destination.x);
-    let dy = absdiff(position.y, destination.y);
-    distance_mult * (dx + dy)
-        + (distance_mult_two - 2 * distance_mult) * min(dx, dy)
 }

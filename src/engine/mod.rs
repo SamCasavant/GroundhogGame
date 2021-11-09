@@ -3,9 +3,9 @@
 // building scripts.
 
 use bevy::prelude::*;
+pub mod actor;
 pub mod render;
 // When pub people run in pub circles it's a very, very
-pub mod actor;
 pub mod world;
 
 pub use bevy_ecs_tilemap::prelude::*;
@@ -23,6 +23,7 @@ pub fn spawn_actor(
     identity: Identity,
     position: world::Position,
     destination: world::Destination,
+    inventory: actor::Inventory,
     sprite_sheet: SpriteSheetBundle,
 ) {
     commands
@@ -31,6 +32,7 @@ pub fn spawn_actor(
         .insert(position)
         .insert(actor::Orientation(actor::Direction::Down))
         .insert(destination)
+        .insert(inventory)
         .insert_bundle(sprite_sheet)
         .insert(world::time::GameTime::from_stamp(&world::time::Stamp {
             day:    0,

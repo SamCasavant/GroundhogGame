@@ -2,32 +2,45 @@ use bevy::prelude::*;
 
 use crate::engine::world;
 
-pub struct Routine {
-    tasks: Option<Vec<ScheduledTask>>,
-}
+mod AI;
 
-pub struct ScheduledTask {
-    task: Task,
-    time: world::time::GameTime,
-}
+pub struct Moving;
 
-#[derive(Copy, Clone)]
-pub struct Task {
-    action:     Action,
-    parameters: ActionParameters,
-    priority:   u32,
+pub struct Inventory {
+    pub contents: Vec<Entity>,
+    pub capacity: usize,
 }
-
-#[derive(Copy, Clone)]
-pub enum Action {
-    Wait,
-    Eat,
-}
-
-#[derive(Default, Copy, Clone)]
-pub struct ActionParameters {
-    location: Option<world::Position>,
-    target:   Option<Entity>,
+impl Inventory {
+    fn contains(
+        &self,
+        entity: &Entity,
+    ) -> bool {
+        self.contents.contains(entity)
+    }
+    fn add(
+        &mut self,
+        entity: Entity,
+    ) -> bool {
+        if self.contents.len() < self.capacity {
+            self.contents.push(entity);
+            true
+        } else {
+            false
+        }
+    }
+    fn remove(
+        &mut self,
+        entity: &Entity,
+    ) -> Option<Entity> {
+        for index in 0..self.capacity {
+            if self.contents[index] == *entity {
+                self.contents.remove(index);
+                return Some(*entity);
+            }
+        }
+        return None;
+    }
+    fn is_full(&self) -> bool { self.contents.len() >= self.capacity }
 }
 
 pub struct Intelligent; // Intelligent actor component
@@ -35,9 +48,10 @@ pub struct Intelligent; // Intelligent actor component
 pub struct Status {
     // Used for keeping track of actor state, values are primarily used for
     // priority of subsequent action
-    hunger:   u32,
-    laziness: u32, /* Actor will prefer inaction over actions with lower
-                    * priority than laziness */
+    pub hunger: u32,
+    laziness:   u32, /* Actor will prefer inaction over actions with lower
+                      * priority than laziness */
+    pub thirst: u32,
 }
 
 pub struct ActorPlugin;
@@ -64,46 +78,8 @@ impl Plugin for ActorPlugin {
                 .after("preparation"),
         )
         .add_system(animal_processes.system().label("preparation"))
-        .add_system(choose_next_task.system().label("planning"))
+        .add_system(AI::choose_next_goal.system().label("planning"))
         .add_system(move_actor.system().label("action").after("planning"));
-    }
-}
-
-fn choose_next_task(
-    mut commands: Commands,
-    mut query: Query<
-        (Entity, &Status, &Routine),
-        (With<Intelligent>, Without<Task>),
-    >,
-    time: Res<world::time::GameTime>,
-) {
-    for (entity, status, routine) in query.iter_mut() {
-        let mut curtask = Task {
-            action:     Action::Wait,
-            parameters: ActionParameters {
-                ..Default::default()
-            },
-            priority:   status.laziness,
-        };
-        // TODO: Change priority calculation for scheduled events to incorporate
-        // eta
-        match &routine.tasks {
-            Some(tasks) => {
-                let priority = time.how_soon(tasks[0].time) / 60;
-                if priority > curtask.priority {
-                    curtask = tasks[0].task;
-                }
-            }
-            None => todo!(),
-        }
-        if status.hunger > curtask.priority {
-            curtask = Task {
-                action:     Action::Eat,
-                parameters: ActionParameters::default(),
-                priority:   status.hunger,
-            }
-        }
-        commands.entity(entity).insert(curtask);
     }
 }
 
@@ -145,14 +121,17 @@ pub fn move_actor(
     mut entity_map: ResMut<world::TileEntityMap>,
     game_time: Res<world::time::GameTime>,
     mut commands: Commands,
-    mut query: Query<(
-        Entity,
-        &mut world::time::GameTime,
-        &mut world::Position,
-        &mut Orientation,
-        &world::Destination,
-        &mut pathfinding::Path,
-    )>,
+    mut query: Query<
+        (
+            Entity,
+            &mut world::time::GameTime,
+            &mut world::Position,
+            &mut Orientation,
+            &world::Destination,
+            &mut pathfinding::Path,
+        ),
+        With<Moving>,
+    >,
 ) {
     for (
         entity,
@@ -207,7 +186,7 @@ pub fn move_actor(
         if *destination == *position {
             commands
                 .entity(entity)
-                .remove::<world::Destination>()
+                .remove::<Moving>()
                 .remove::<pathfinding::Path>();
         }
     }
