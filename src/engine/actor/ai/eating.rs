@@ -13,7 +13,7 @@ pub struct Eating;
 pub fn find_food_system(
     mut commands: Commands,
     mut actors: Query<
-        (Entity, &Position, &Destination),
+        (Entity, &Position),
         (With<FindingFood>, Without<Target>),
     >,
     foods: Query<(Entity, &Position), With<item::NutritionValue>>,
@@ -22,7 +22,7 @@ pub fn find_food_system(
     // Actors should not enter this state with food in their inventory; it will
     // be ignored
     // TODO: This is about the slowest way this can work OPTIMIZE ME!
-    for (actor, position, mut destination) in actors.iter_mut() {
+    for (actor, position) in actors.iter_mut() {
         let mut min_distance = i64::MAX;
         let mut selected_food = None;
         let mut food_location = None;
@@ -35,14 +35,18 @@ pub fn find_food_system(
                 food_location = Some(*food_position);
             }
         }
-        if selected_food.is_some() {
-            let target = Target(selected_food.unwrap());
-            destination = &Destination(food_location.unwrap());
+        if let Some(food) = selected_food {
+            let target = Target(food);
+            let target_location = food_location.unwrap();
             commands.entity(actor).remove::<FindingFood>();
-            if position.neighbors(1).contains(&food_location.unwrap()) {
+            if position.neighbors(1).contains(&target_location) {
                 commands.entity(actor).insert(target).insert(PickingUp);
             } else {
-                commands.entity(actor).insert(Moving);
+                commands
+                    .entity(actor)
+                    .insert(Moving)
+                    .remove::<Destination>()
+                    .insert(Destination(target_location));
             }
         }
     }
@@ -68,7 +72,7 @@ pub fn eat_system(
                 if value >= &status.hunger {
                     status.hunger = 0;
                 } else {
-                    status.hunger = status.hunger - value
+                    status.hunger -= value
                 }
                 commands.entity(food_entity).despawn();
                 commands
@@ -77,7 +81,7 @@ pub fn eat_system(
                     .remove::<Eating>()
                     .remove::<Target>();
             }
-            Err(error) => panic!(error),
+            Err(error) => panic!("{}", error),
         }
     }
 }
@@ -125,11 +129,8 @@ pub fn eating_ai(
                         Err(_) => todo!(),
                     }
                 }
-                if owned_food.is_some() {
-                    commands
-                        .entity(actor)
-                        .insert(Target(owned_food.unwrap()))
-                        .insert(Eating);
+                if let Some(food) = owned_food {
+                    commands.entity(actor).insert(Target(food)).insert(Eating);
                 } else {
                     commands.entity(actor).insert(FindingFood);
                 }
