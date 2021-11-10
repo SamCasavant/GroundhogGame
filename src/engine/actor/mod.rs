@@ -2,11 +2,11 @@ use bevy::prelude::*;
 
 use crate::engine::world;
 
-mod AI;
-
-pub struct Moving;
+mod ai;
 
 pub struct Inventory {
+    // Every actor should have an inventory component; animals can have an
+    // inventory of size 1.
     pub contents: Vec<Entity>,
     pub capacity: usize,
 }
@@ -38,7 +38,7 @@ impl Inventory {
                 return Some(*entity);
             }
         }
-        return None;
+        None
     }
     fn is_full(&self) -> bool { self.contents.len() >= self.capacity }
 }
@@ -78,8 +78,9 @@ impl Plugin for ActorPlugin {
                 .after("preparation"),
         )
         .add_system(animal_processes.system().label("preparation"))
-        .add_system(AI::choose_next_goal.system().label("planning"))
-        .add_system(move_actor.system().label("action").after("planning"));
+        .add_plugin(ai::AIPlugin);
+        // .add_system(AI::choose_next_goal.system().label("planning"))
+        // .add_system(move_actor.system().label("action").after("planning"));
     }
 }
 
@@ -116,78 +117,3 @@ pub enum Direction {
 }
 
 mod pathfinding;
-
-pub fn move_actor(
-    mut entity_map: ResMut<world::TileEntityMap>,
-    game_time: Res<world::time::GameTime>,
-    mut commands: Commands,
-    mut query: Query<
-        (
-            Entity,
-            &mut world::time::GameTime,
-            &mut world::Position,
-            &mut Orientation,
-            &world::Destination,
-            &mut pathfinding::Path,
-        ),
-        With<Moving>,
-    >,
-) {
-    for (
-        entity,
-        mut timer,
-        mut position,
-        mut orientation,
-        destination,
-        mut path,
-    ) in &mut query.iter_mut()
-    {
-        if path.0.is_empty() {
-            commands.entity(entity).remove::<pathfinding::Path>();
-        } else if *timer <= *game_time {
-            let next_step = path.0.remove(0);
-            if path.0.is_empty() {
-                commands.entity(entity).remove::<pathfinding::Path>();
-            }
-            let next_direction = next_step - *position;
-            match next_direction {
-                world::Position { x: 1, .. } => {
-                    *orientation = Orientation(Direction::Up);
-                }
-                world::Position { x: -1, .. } => {
-                    *orientation = Orientation(Direction::Down);
-                }
-                world::Position { y: 1, .. } => {
-                    *orientation = Orientation(Direction::Right);
-                }
-                world::Position { y: -1, .. } => {
-                    *orientation = Orientation(Direction::Left);
-                }
-                _ => (),
-            }
-            // Destructure for convenience
-            let old_x = position.x;
-            let old_y = position.y;
-
-            let new_x = next_step.x;
-            let new_y = next_step.y;
-
-            // Mark previous tile as unoccupied
-            entity_map.set(old_x, old_y, None);
-            // Move the actor
-            *position = next_step;
-            // Mark next tile as occupied
-            entity_map.set(new_x, new_y, Some(entity));
-            // Set time of next action
-            *timer = game_time.copy_and_tick_seconds(1);
-        } else {
-            *timer = game_time.copy_and_tick_seconds(0);
-        }
-        if *destination == *position {
-            commands
-                .entity(entity)
-                .remove::<Moving>()
-                .remove::<pathfinding::Path>();
-        }
-    }
-}
