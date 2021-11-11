@@ -163,17 +163,14 @@ pub fn eating_ai(
                 let mut owned_food = None;
                 let mut max_nutrition_value = 0;
                 for object in &inventory.contents {
-                    match food_query.get(*object) {
-                        Ok(result) => {
-                            let (food, nutrition_value, _position) = result;
-                            // TODO: Max nutrition value is a strange thing to
-                            // optimize for here.
-                            if nutrition_value.0 > max_nutrition_value {
-                                max_nutrition_value = nutrition_value.0;
-                                owned_food = Some(food);
-                            }
+                    if let Ok(result) = food_query.get(*object) {
+                        let (food, nutrition_value, _position) = result;
+                        // TODO: Max nutrition value is a strange thing to
+                        // optimize for here.
+                        if nutrition_value.0 > max_nutrition_value {
+                            max_nutrition_value = nutrition_value.0;
+                            owned_food = Some(food);
                         }
-                        Err(_) => (),
                     }
                 }
                 if let Some(food) = owned_food {

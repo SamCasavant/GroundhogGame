@@ -48,7 +48,7 @@ pub fn spawn_hamburger_every_second(
         commands
             .spawn()
             .insert_bundle(SpriteSheetBundle {
-                texture_atlas: texture_atlas_handle.clone(),
+                texture_atlas: texture_atlas_handle,
                 transform: transform,
                 sprite: TextureAtlasSprite::new(0),
                 ..Default::default()
