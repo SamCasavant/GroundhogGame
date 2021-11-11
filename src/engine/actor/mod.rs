@@ -32,7 +32,7 @@ impl Inventory {
         &mut self,
         entity: &Entity,
     ) -> Option<Entity> {
-        for index in 0..self.capacity {
+        for index in 0..self.contents.len() {
             if self.contents[index] == *entity {
                 self.contents.remove(index);
                 return Some(*entity);
@@ -98,7 +98,7 @@ fn animal_processes(
         for mut status in query.iter_mut() {
             status.hunger += 1;
         }
-        *timer = AnimalTimer(game_time.copy_and_tick_seconds(60));
+        *timer = AnimalTimer(game_time.copy_and_tick(10));
     }
 }
 

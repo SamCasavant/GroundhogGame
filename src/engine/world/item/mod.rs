@@ -19,7 +19,7 @@ pub fn spawn_hamburger_every_second(
 ) {
     // TODO Temporary
     if timer.0.tick(time.delta()).just_finished() {
-        let x_range = RangeInclusive::new(0, 200);
+        let x_range = RangeInclusive::new(0, 50);
         let y_range = x_range.clone();
         let mut rng = rand::thread_rng();
         let position = world::Position {
@@ -53,7 +53,7 @@ pub fn spawn_hamburger_every_second(
                 sprite: TextureAtlasSprite::new(0),
                 ..Default::default()
             })
-            .insert(NutritionValue(100))
-            .insert(transform);
+            .insert(NutritionValue(10000))
+            .insert(position);
     }
 }

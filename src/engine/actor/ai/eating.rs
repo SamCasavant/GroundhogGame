@@ -1,14 +1,37 @@
 use bevy::prelude::*;
 
-use crate::engine::actor::{ai::{Moving, PickingUp, Target},
-                           Inventory, Status};
 use crate::engine::world::{item, Destination, Position};
+use crate::engine::{actor::{ai::{Moving, PickingUp, Target},
+                            pathfinding::Path,
+                            Inventory, Status},
+                    world::item::NutritionValue};
 
 pub struct EatGoal;
 
 pub struct FindingFood;
 
 pub struct Eating;
+
+pub fn validate_food_target(
+    mut commands: Commands,
+    mut query: Query<(Entity, &Position, &Target), With<Moving>>,
+    food_query: Query<&item::NutritionValue, With<Position>>,
+) {
+    for (actor, position, target) in query.iter_mut() {
+        match food_query.get(target.0) {
+            Ok(_) => println!("Did not stop"),
+            Err(_) => {
+                commands
+                    .entity(actor)
+                    .remove::<Moving>()
+                    .remove::<Target>()
+                    .remove::<Destination>()
+                    .insert(Destination(*position));
+                println!("Stopped");
+            }
+        }
+    }
+}
 
 pub fn find_food_system(
     mut commands: Commands,
@@ -39,11 +62,16 @@ pub fn find_food_system(
             let target = Target(food);
             let target_location = food_location.unwrap();
             commands.entity(actor).remove::<FindingFood>();
-            if position.neighbors(1).contains(&target_location) {
+            if position == &target_location {
+                println!(
+                    "Entity at {:?} is picking up item at {:?}",
+                    position, target_location
+                );
                 commands.entity(actor).insert(target).insert(PickingUp);
             } else {
                 commands
                     .entity(actor)
+                    .insert(target)
                     .insert(Moving)
                     .remove::<Destination>()
                     .insert(Destination(target_location));
@@ -63,11 +91,8 @@ pub fn eat_system(
     // Eats an object out of the inventory
     // Do not enter Eating state without target object in inventory
     for (actor, mut inventory, target, mut status) in actors.iter_mut() {
-        // TODO: I have to figure out how to get access to the food's
-        // nutrition_value here
         let food_entity = inventory.remove(&target.0).unwrap();
-        let nutrition_value = foods.get(food_entity);
-        match nutrition_value {
+        match foods.get(food_entity) {
             Ok(item::NutritionValue(value)) => {
                 if value >= &status.hunger {
                     status.hunger = 0;
@@ -75,14 +100,14 @@ pub fn eat_system(
                     status.hunger -= value
                 }
                 commands.entity(food_entity).despawn();
-                commands
-                    .entity(actor)
-                    .remove::<EatGoal>()
-                    .remove::<Eating>()
-                    .remove::<Target>();
             }
             Err(error) => panic!("{}", error),
         }
+        commands
+            .entity(actor)
+            .remove::<EatGoal>()
+            .remove::<Eating>()
+            .remove::<Target>();
     }
 }
 
@@ -92,8 +117,8 @@ pub fn eating_ai(
         (Entity, &Inventory, &Position),
         (With<EatGoal>, Without<(PickingUp, Eating, FindingFood)>),
     >,
-    target_query: Query<(&Target, &Position)>,
-    food_query: Query<(Entity, &item::NutritionValue)>,
+    target_query: Query<&Target>,
+    food_query: Query<(Entity, &NutritionValue, &Position)>,
 ) {
     // Eating AI Flow:
     // FindingFood -> Moving -> PickingUp -> Eating
@@ -101,32 +126,54 @@ pub fn eating_ai(
     // Currently this also handles stopping movement, but TODO not anymore
     for (actor, inventory, position) in query.iter() {
         match target_query.get(actor) {
-            Ok(result) => {
-                let (target, location) = result;
-                if inventory.contains(&target.0) {
-                    commands.entity(actor).insert(Eating);
-                } else if position.neighbors(1).contains(location) {
-                    commands.entity(actor).remove::<Moving>().insert(PickingUp);
-                } else {
-                    commands
-                        .entity(actor)
-                        .insert(Moving)
-                        .insert(Destination(*location));
+            Ok(target) => {
+                // Entity already has target
+                match food_query.get(target.0) {
+                    Ok((_food, _nutritionvalue, location)) => {
+                        // Target is on the map
+                        if position == location {
+                            commands
+                                .entity(actor)
+                                .remove::<Moving>()
+                                .insert(PickingUp);
+                        } else {
+                            commands
+                                .entity(actor)
+                                .insert(Moving)
+                                .remove::<Destination>()
+                                .remove::<Path>()
+                                .insert(Destination(*location));
+                        }
+                    }
+
+                    Err(_) => {
+                        if inventory.contains(&target.0) {
+                            commands.entity(actor).insert(Eating);
+                        } else {
+                            commands
+                                .entity(actor)
+                                .remove::<Target>()
+                                .remove::<Moving>();
+                        }
+                    }
                 }
             }
             Err(_) => {
+                // Entity needs target
                 let mut owned_food = None;
                 let mut max_nutrition_value = 0;
                 for object in &inventory.contents {
                     match food_query.get(*object) {
                         Ok(result) => {
-                            let (food, nutrition_value) = result;
+                            let (food, nutrition_value, _position) = result;
+                            // TODO: Max nutrition value is a strange thing to
+                            // optimize for here.
                             if nutrition_value.0 > max_nutrition_value {
                                 max_nutrition_value = nutrition_value.0;
                                 owned_food = Some(food);
                             }
                         }
-                        Err(_) => todo!(),
+                        Err(_) => (),
                     }
                 }
                 if let Some(food) = owned_food {

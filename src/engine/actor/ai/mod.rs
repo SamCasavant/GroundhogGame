@@ -40,6 +40,7 @@ impl Plugin for AIPlugin {
             .add_system(eating::find_food_system.system())
             .add_system(choose_next_goal.system())
             .add_system(eating::eating_ai.system());
+        //.add_system(eating::validate_food_target.system());
     }
 }
 
@@ -72,7 +73,9 @@ pub fn choose_next_goal(
                 commands.entity(entity).insert(eating::EatGoal);
             }
             Goals::Drink => todo!(),
-            Goals::Wait => todo!(),
+            Goals::Wait => (), /* {
+                                * commands.entity(entity).insert(WaitGoal);
+                                * } */
         }
     }
 }
@@ -80,6 +83,7 @@ pub fn choose_next_goal(
 fn pick_up_system(
     mut commands: Commands,
     mut actors: Query<(Entity, &mut Inventory, &Target), With<PickingUp>>,
+    object_query: Query<&Position>,
 ) {
     // Takes items from ground and adds them to actor inventory
     // Do not enter PickingUp state when too far from target; no checks
@@ -87,11 +91,17 @@ fn pick_up_system(
         if inventory.is_full() {
             // Drop something?
         }
-
-        inventory.add(target.0);
-
-        // Remove the item from the ground
-        commands.entity(target.0).remove::<Position>();
+        match object_query.get(target.0) {
+            Ok(_) => {
+                inventory.add(target.0); // Remove the item from the ground
+                commands.entity(target.0).remove::<Position>();
+            }
+            Err(_) => {
+                // Someone else got there first?
+                commands.entity(actor).remove::<Target>();
+            }
+        }
+        commands.entity(actor).remove::<PickingUp>();
     }
 }
 
@@ -122,11 +132,11 @@ pub fn walk_system(
     {
         if path.0.is_empty() {
             commands.entity(entity).remove::<pathfinding::Path>();
-        } else if *timer <= *game_time {
+        } else if *timer <= *game_time
+            && entity_map.get(path.0[0].x, path.0[0].y).is_none()
+        {
             let next_step = path.0.remove(0);
-            if path.0.is_empty() {
-                commands.entity(entity).remove::<pathfinding::Path>();
-            }
+
             let next_direction = next_step - *position;
             match next_direction {
                 world::Position { x: 1, .. } => {

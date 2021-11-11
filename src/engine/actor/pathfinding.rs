@@ -34,8 +34,8 @@ pub fn local_avoidance(
     // change
     for (_entity, position, mut path, destination) in query.iter_mut() {
         let nearby_entities = nearby_entities(position, 1, &entity_map);
-        if nearby_entities.is_some() {
-            if path.0.len() <= 1
+        if nearby_entities.is_some() && path.0.len() > 0 {
+            if path.0.len() == 1
                 && entity_map.get(path.0[0].x, path.0[0].y).is_some()
             // Panics on path of length 0, which are not supposed to exist here
             {
