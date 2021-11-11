@@ -15,6 +15,7 @@ pub enum Goals {
     Wait,
 }
 
+// TODO: Generics!
 pub struct DrinkGoal;
 pub struct WaitGoal;
 
@@ -37,7 +38,8 @@ impl Plugin for AIPlugin {
             .add_system(eating::eat_system.system())
             .add_system(pick_up_system.system())
             .add_system(eating::find_food_system.system())
-            .add_system(choose_next_goal.system());
+            .add_system(choose_next_goal.system())
+            .add_system(eating::eating_ai.system());
     }
 }
 

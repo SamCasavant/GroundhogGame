@@ -20,7 +20,7 @@ impl Plugin for GraphicsPlugin {
     }
 }
 
-const TILE_WIDTH: f32 = 64.0;
+pub const TILE_WIDTH: f32 = 64.0;
 
 fn animate_sprite_system(
     mut query: Query<(

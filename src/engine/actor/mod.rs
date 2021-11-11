@@ -48,10 +48,10 @@ pub struct Intelligent; // Intelligent actor component
 pub struct Status {
     // Used for keeping track of actor state, values are primarily used for
     // priority of subsequent action
-    pub hunger: u32,
-    laziness:   u32, /* Actor will prefer inaction over actions with lower
-                      * priority than laziness */
-    pub thirst: u32,
+    pub hunger:   u32,
+    pub laziness: u32, /* Actor will prefer inaction over actions with lower
+                        * priority than laziness */
+    pub thirst:   u32,
 }
 
 pub struct ActorPlugin;
@@ -84,7 +84,7 @@ impl Plugin for ActorPlugin {
     }
 }
 
-struct Animal; // Component marker for animals (including humans)
+pub struct Animal; // Component marker for animals (including humans)
 
 struct AnimalTimer(world::time::GameTime);
 

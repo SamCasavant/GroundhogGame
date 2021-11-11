@@ -33,6 +33,13 @@ pub fn spawn_actor(
         .insert(actor::Orientation(actor::Direction::Down))
         .insert(destination)
         .insert(inventory)
+        .insert(actor::Status {
+            hunger:   100,
+            thirst:   0,
+            laziness: 10,
+        })
+        .insert(actor::Animal)
+        .insert(actor::Intelligent)
         .insert_bundle(sprite_sheet)
         .insert(world::time::GameTime::from_stamp(&world::time::Stamp {
             day:    0,
