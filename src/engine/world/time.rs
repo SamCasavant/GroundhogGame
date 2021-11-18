@@ -161,10 +161,7 @@ impl Plugin for TimePlugin {
         }))
         .insert_resource(GameInWatch(Stopwatch::new()))
         .insert_resource(GameTimeRate(5.0))
-        .add_system_to_stage(
-            CoreStage::First,
-            advance_time.system().after(CoreSystem::Time),
-        );
+        .add_system_to_stage(CoreStage::First, advance_time.system());
     }
 }
 

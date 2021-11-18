@@ -2,18 +2,12 @@ use std::ops::RangeInclusive;
 
 use bevy::prelude::*;
 use bevy_ecs_tilemap::prelude::*;
-use log4rs;
 use pretty_trace::*;
 use rand::Rng;
 mod debug;
 mod engine;
 
 fn main() {
-    // Set up logging
-    log4rs::init_file("config/log4rs.yaml", Default::default()).unwrap();
-
-    debug!("Testing...");
-
     PrettyTrace::new().on();
     App::build()
         .add_plugins(DefaultPlugins)

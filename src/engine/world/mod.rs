@@ -210,7 +210,7 @@ impl Plugin for WorldPlugin {
             .add_startup_system(init_tilemaps.system())
             //.add_system(plan_path.system().label("preparation"))
             .add_plugin(time::TimePlugin)
-            .insert_resource(item::HamburgerTimer(Timer::from_seconds(0.4, true)))
+            .insert_resource(item::HamburgerTimer(Timer::from_seconds(0.2, true)))
             .add_system(item::spawn_hamburger_every_second.system());
     }
 }

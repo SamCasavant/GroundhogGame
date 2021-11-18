@@ -1,5 +1,4 @@
-use std::{fmt::Debug, ops::Add};
-
+use bevy::diagnostic::FrameTimeDiagnosticsPlugin;
 use bevy::ecs::{archetype::Archetypes, component::Components, entity::Entities};
 use bevy::prelude::*;
 use bevy_console::*;
@@ -17,6 +16,7 @@ impl Plugin for DebugPlugin {
                 // override config here
                 ..Default::default()
             })
+            .add_plugin(FrameTimeDiagnosticsPlugin)
             .insert_resource(Pause(false))
             .add_system(debug_console.system());
     }

@@ -70,6 +70,7 @@ impl Plugin for ActorPlugin {
                 frame:  0,
             },
         )))
+        //TODO: Move this to ai
         .add_system(pathfinding::plan_path.system().label("preparation"))
         .add_system(
             pathfinding::local_avoidance
