@@ -1,8 +1,8 @@
 use bevy::prelude::*;
 
 use crate::engine::world::{item, Destination, Position};
-use crate::engine::{actor::{ai::{Moving, PickingUp, Target},
-                            pathfinding::Path,
+use crate::engine::{actor::{ai::{Moving, PickingUp,
+                                 Target},
                             Inventory, Status},
                     world::item::NutritionValue};
 

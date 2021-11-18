@@ -3,10 +3,15 @@
 // state or direct assignment.
 use bevy::prelude::*;
 
-use crate::engine::actor::{pathfinding, Direction, Intelligent, Inventory,
-                           Orientation, Status};
+use crate::engine::actor::{Direction, Intelligent, Inventory, Orientation,
+                           Status};
 use crate::engine::{world,
                     world::{time, Position}};
+
+pub mod pathfinding;
+
+// Tasks:
+mod eating;
 
 // Goals
 pub enum Goals {
@@ -25,27 +30,32 @@ pub struct PickingUp;
 // Goal Parameters
 pub struct Target(Entity);
 
-// Tasks:
-mod eating;
-
 pub struct AIPlugin;
 impl Plugin for AIPlugin {
     fn build(
         &self,
         app: &mut AppBuilder,
     ) {
-        app.add_system(walk_system.system().label("acting"))
-            .add_system(eating::eat_system.system().label("acting"))
-            .add_system(pick_up_system.system().label("acting"))
-            .add_system(eating::find_food_system.system().label("acting"))
-            .add_system(choose_next_goal.system().label("preparation"))
+        app.add_system(choose_next_goal.system().label("preparation"))
+            .add_system(pathfinding::plan_path.system().label("preparation"))
+            .add_system(
+                pathfinding::local_avoidance
+                    .system()
+                    .label("planning")
+                    .after("preparation"),
+            )
             .add_system(
                 eating::eating_ai
                     .system()
                     .label("planning")
                     .after("preparation")
                     .before("acting"),
-            );
+            )
+            .add_system(walk_system.system().label("acting"))
+            .add_system(eating::eat_system.system().label("acting"))
+            .add_system(pick_up_system.system().label("acting"))
+            .add_system(eating::find_food_system.system().label("acting"));
+
         //.add_system(eating::validate_food_target.system());
     }
 }

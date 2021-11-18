@@ -71,13 +71,7 @@ impl Plugin for ActorPlugin {
             },
         )))
         //TODO: Move this to ai
-        .add_system(pathfinding::plan_path.system().label("preparation"))
-        .add_system(
-            pathfinding::local_avoidance
-                .system()
-                .label("planning")
-                .after("preparation"),
-        )
+
         .add_system(animal_processes.system().label("preparation"))
         .add_plugin(ai::AIPlugin);
         // .add_system(AI::choose_next_goal.system().label("planning"))
@@ -116,5 +110,3 @@ pub enum Direction {
     Left,
     Right,
 }
-
-mod pathfinding;
