@@ -32,13 +32,18 @@ pub fn local_avoidance(
     // entities. If it does, it finds a destination that can be pathed to, and
     // paths to that. Failing that, it resets the path- that behavior should
     // change
-    for (_entity, position, mut path, destination) in query.iter_mut() {
+    for (entity, position, mut path, destination) in query.iter_mut() {
+        debug!("Performing local avoidance for {:?}.", entity);
         let nearby_entities = nearby_entities(position, 1, &entity_map);
         if nearby_entities.is_some() && !path.0.is_empty() {
             if path.0.len() == 1
                 && entity_map.get(path.0[0].x, path.0[0].y).is_some()
             // Panics on path of length 0, which are not supposed to exist here
             {
+                debug!(
+                    "Skipping local avoidance for entity, because destination \
+                     is inaccessible neighbor."
+                );
                 path.0 = Vec::<Position>::new();
             } else if entity_map.get(path.0[0].x, path.0[0].y).is_some() {
                 let index = if path.0.len() == 2 {
@@ -58,6 +63,7 @@ pub fn local_avoidance(
                 );
 
                 if valid_destination.is_some() {
+                    debug!("Local avoidance path found.");
                     let local_path = get_path_around_entities(
                         position,
                         &local_destination,
@@ -73,6 +79,9 @@ pub fn local_avoidance(
                             {
                                 // If the old path can be affixed to the new
                                 // one:
+                                debug!(
+                                    "Local avoidance path can be reattached."
+                                );
                                 p.extend(path.0[index + 1..].iter().cloned());
                             }
                             p
@@ -80,6 +89,7 @@ pub fn local_avoidance(
                         None => vec![*position],
                     }
                 } else {
+                    debug!("No local avoidance path found, resetting path.");
                     path.0 = Vec::<Position>::new();
                 }
             }
@@ -132,7 +142,6 @@ fn best_nearest_valid_destination(
 
     // search_range -= 1;
     if valid_destination.is_some() {
-        println!("Found valid destination");
         valid_destination
     //} else if search_range > 0 {
     //    todo!() // This function could be rewritten to be recursive when it
@@ -144,7 +153,7 @@ fn best_nearest_valid_destination(
 
 pub fn plan_path(
     mut commands: Commands,
-    query: Query<(Entity, &Position, &Destination), (Changed<Destination>)>,
+    query: Query<(Entity, &Position, &Destination), Changed<Destination>>,
     weight_map: Res<TileWeightMap>,
 ) {
     for (entity, position, destination) in query.iter() {

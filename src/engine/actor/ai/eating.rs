@@ -42,8 +42,18 @@ pub fn find_food_system(
             let target_location = food_location.unwrap();
             commands.entity(actor).remove::<FindingFood>();
             if position == &target_location {
+                debug!(
+                    "Entity {:?} found target {:?} at their location, \
+                     switching active state to Picking Up.",
+                    actor, food
+                );
                 commands.entity(actor).insert(target).insert(PickingUp);
             } else {
+                debug!(
+                    "Entity {:?} found target {:?} setting target, \
+                     destination and switching active state to Moving.",
+                    actor, food
+                );
                 commands
                     .entity(actor)
                     .insert(target)
@@ -66,6 +76,7 @@ pub fn eat_system(
     // Eats an object out of the inventory
     // Do not enter Eating state without target object in inventory
     for (actor, mut inventory, target, mut status) in actors.iter_mut() {
+        debug!("Entity: {:?} is eating {:?}", actor, target.0);
         let food_entity = inventory.remove(&target.0).unwrap();
         match foods.get(food_entity) {
             Ok(item::NutritionValue(value)) => {
@@ -99,6 +110,7 @@ pub fn eating_ai(
     // FindingFood -> Moving -> PickingUp -> Eating
     // This system identifies which step we're on and assigns it to the actor
     // Currently this also handles stopping movement, but TODO not anymore
+
     for (actor, inventory, position) in query.iter() {
         match target_query.get(actor) {
             Ok(target) => {
@@ -107,11 +119,21 @@ pub fn eating_ai(
                     Ok((_food, _nutritionvalue, location)) => {
                         // Target is on the map
                         if position == location {
+                            debug!(
+                                "Entity {:?} is at target {:?}, setting \
+                                 active task to PickingUp.",
+                                actor, target.0
+                            );
                             commands
                                 .entity(actor)
                                 .remove::<Moving>()
                                 .insert(PickingUp);
                         } else {
+                            debug!(
+                                "Entity {:?} has target {:?}, setting active \
+                                 state to Moving.",
+                                actor, target.0
+                            );
                             commands
                                 .entity(actor)
                                 .insert(Moving)
@@ -122,8 +144,18 @@ pub fn eating_ai(
 
                     Err(_) => {
                         if inventory.contains(&target.0) {
+                            debug!(
+                                "Entity {:?} has target {:?} in inventory, \
+                                 switching active state to Eating.",
+                                actor, target.0
+                            );
                             commands.entity(actor).insert(Eating);
                         } else {
+                            debug!(
+                                "Entity {:?} has lost track of target {:?}, \
+                                 removing target and cancelling movement.",
+                                actor, target.0
+                            );
                             commands
                                 .entity(actor)
                                 .remove::<Target>()
@@ -148,8 +180,18 @@ pub fn eating_ai(
                     }
                 }
                 if let Some(food) = owned_food {
+                    debug!(
+                        "Entity {:?} has target {:?} in inventory, switching \
+                         active state to Eating.",
+                        actor, food
+                    );
                     commands.entity(actor).insert(Target(food)).insert(Eating);
                 } else {
+                    debug!(
+                        "Entity {:?} has no food readily available, switching \
+                         active state to FindingFood.",
+                        actor
+                    );
                     commands.entity(actor).insert(FindingFood);
                 }
             }

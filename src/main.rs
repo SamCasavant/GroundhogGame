@@ -1,33 +1,23 @@
 use std::ops::RangeInclusive;
 
-use bevy::{diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin},
-           ecs::{archetype::Archetypes, component::Components,
-                 entity::Entities},
-           prelude::*};
-use bevy_console::*;
+use bevy::prelude::*;
 use bevy_ecs_tilemap::prelude::*;
-use bevy_egui::EguiPlugin;
+use log4rs;
 use pretty_trace::*;
 use rand::Rng;
-
+mod debug;
 mod engine;
 
-use bevy_mod_debug_console::{build_commands, match_commands, Pause};
-
 fn main() {
+    // Set up logging
+    log4rs::init_file("config/log4rs.yaml", Default::default()).unwrap();
+
+    debug!("Testing...");
+
     PrettyTrace::new().on();
     App::build()
         .add_plugins(DefaultPlugins)
-        .insert_resource(ClearColor(Color::rgb(0.0, 0.0, 0.05)))
-        .add_plugin(ConsolePlugin)
-        .insert_resource(ConsoleConfiguration {
-            // override config here
-            ..Default::default()
-        })
-        .insert_resource(Pause(false))
-        .add_system(debug_console.system())
-        .add_plugin(FrameTimeDiagnosticsPlugin::default())
-        .add_plugin(LogDiagnosticsPlugin::default())
+        .add_plugin(debug::DebugPlugin)
         .add_plugin(engine::render::GraphicsPlugin)
         .add_plugin(engine::actor::ActorPlugin)
         .add_plugin(engine::world::WorldPlugin)
@@ -35,42 +25,6 @@ fn main() {
         .add_plugin(TiledMapPlugin)
         .add_startup_system(add_people.system())
         .run();
-}
-
-fn debug_console(
-    mut console_events: EventReader<ConsoleCommandEntered>,
-    mut console_line: EventWriter<PrintConsoleLine>,
-    a: &Archetypes,
-    c: &Components,
-    e: &Entities,
-    mut pause: ResMut<Pause>,
-    reflect: Res<bevy::reflect::TypeRegistry>,
-) {
-    let app_name = "";
-    for event in console_events.iter() {
-        let console_app = build_commands(app_name);
-        let mut args = vec![app_name];
-        args.push(&event.command);
-        let split = event.args.split_whitespace();
-        args.append(&mut split.collect());
-        let matches_result = console_app.try_get_matches_from(args);
-
-        if let Err(e) = matches_result {
-            console_line.send(PrintConsoleLine::new(e.to_string()));
-            return;
-        }
-
-        let output = match_commands(
-            &matches_result.unwrap(),
-            a,
-            c,
-            e,
-            &mut pause,
-            &*reflect,
-        );
-
-        console_line.send(PrintConsoleLine::new(output));
-    }
 }
 
 fn add_people(

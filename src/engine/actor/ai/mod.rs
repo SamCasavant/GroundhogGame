@@ -56,6 +56,7 @@ pub fn choose_next_goal(
     time: Res<time::GameTime>,
 ) {
     for (entity, status) in query.iter_mut() {
+        debug!("Entity {:?} has no active goal, updating.", entity);
         let mut priority = status.laziness;
         let mut goal = Goals::Wait;
         // TODO: Refactor because this will get large and repetive
@@ -70,12 +71,17 @@ pub fn choose_next_goal(
         // TODO implement routines (time-based tasks)
         match goal {
             Goals::Eat => {
+                debug!("EatGoal selected.");
                 commands.entity(entity).insert(eating::EatGoal);
             }
-            Goals::Drink => todo!(),
-            Goals::Wait => (), /* {
-                                * commands.entity(entity).insert(WaitGoal);
-                                * } */
+            Goals::Drink => {
+                debug!("DrinkGoal selected.")
+            }
+            Goals::Wait => {
+                debug!("WaitGoal selected.")
+            } /* {
+               * commands.entity(entity).insert(WaitGoal);
+               * } */
         }
     }
 }
@@ -90,14 +96,20 @@ fn pick_up_system(
     for (actor, mut inventory, target) in actors.iter_mut() {
         if inventory.is_full() {
             // Drop something?
+            debug!(
+                "Entity {:?} has full inventory. Picking up anyway. Because \
+                 you didn't write the code. Thanks...",
+                actor
+            )
         }
         match object_query.get(target.0) {
             Ok(_) => {
-                println!("Entity: {:?} is picking up {:?}", actor, target.0);
+                debug!("Entity: {:?} is picking up {:?}", actor, target.0);
                 inventory.add(target.0); // Remove the item from the ground
                 commands.entity(target.0).remove::<Position>();
             }
             Err(_) => {
+                debug!("Entity: {:?} can't pick up {:?}", actor, target.0);
                 // Someone else got there first?
                 commands.entity(actor).remove::<Target>();
             }
@@ -133,11 +145,13 @@ pub fn walk_system(
     ) in &mut query.iter_mut()
     {
         if path.0.is_empty() {
+            debug!("Entity {:?} has empty path, removing.", entity);
             commands.entity(entity).remove::<pathfinding::Path>();
         } else if *timer <= *game_time
             && entity_map.get(path.0[0].x, path.0[0].y).is_none()
         {
             if !planned_moves.contains(&path.0[0]) {
+                debug!("Entity {:?} is taking a step.", entity);
                 let next_step = path.0.remove(0);
                 planned_moves.push(next_step);
 
@@ -171,11 +185,18 @@ pub fn walk_system(
                 entity_map.set(new_x, new_y, Some(entity));
                 // Set time of next action
                 *timer = game_time.copy_and_tick_seconds(1);
+            } else {
+                warn!(
+                    "Entity {:?} is not allowed to walk because someone else \
+                     got there first. NON-DETERMINISTIC BEHAVIOR",
+                    entity
+                );
             }
         } else {
             *timer = game_time.copy_and_tick_seconds(0);
         }
         if *destination == *position {
+            debug!("Entity {:?} has arrived at destination.", entity);
             commands
                 .entity(entity)
                 .remove::<Moving>()

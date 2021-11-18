@@ -15,7 +15,9 @@ impl Plugin for GraphicsPlugin {
         &self,
         app: &mut AppBuilder,
     ) {
-        app.add_system(animate_sprite_system.system().label("render"))
+        debug!("Initializing GraphicsPlugin");
+        app.insert_resource(ClearColor(Color::rgb(0.0, 0.0, 0.05)))
+            .add_system(animate_sprite_system.system().label("render"))
             .add_system(camera_movement::camera_movement.system());
     }
 }
@@ -31,6 +33,7 @@ fn animate_sprite_system(
         Without<OutsideFrustum>,
     )>
 ) {
+    debug!("Running animate_sprite_system.");
     for (mut sprite, mut transform, orientation, position, _) in
         &mut query.iter_mut()
     {

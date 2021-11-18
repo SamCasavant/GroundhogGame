@@ -17,6 +17,7 @@ bevy_console = "0.2.0" # { git = "https://github.com/RichoDemus/bevy-console.git
 bevy_mod_debug_console = { git = "https://github.com/hymm/bevy_mod_debug_console.git"}
 indexmap = "1.7.0"
 log = "0.4"
+log4rs = {version = "1.0.0", features = ["file_appender"]}
 morton-encoding = "2.0"
 pathfinding = "2.0.4"
 pretty_trace = {git = "https://github.com/10XGenomics/rust-toolbox.git"}

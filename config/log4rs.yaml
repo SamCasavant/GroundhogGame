@@ -1,0 +1,9 @@
+refresh_rate: 5 seconds
+appenders:
+  debug:
+    kind: file
+    path: "log/debug.log"
+root:
+  level: debug
+  appenders:
+    - debug
