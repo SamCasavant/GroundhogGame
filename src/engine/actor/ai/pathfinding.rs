@@ -11,6 +11,8 @@
 // Explicit system ordering is probably also needed.
 // TODO: For performance, consider limiting the number of pathfinding calls an
 // entity can make per time
+// RESUME: Currently this is all very inefficient and does loads of needless
+// pathfinding. Fix that first.
 
 use bevy::prelude::*;
 use pathfinding::prelude::astar;
