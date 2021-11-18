@@ -93,6 +93,7 @@ fn pick_up_system(
         }
         match object_query.get(target.0) {
             Ok(_) => {
+                println!("Entity: {:?} is picking up {:?}", actor, target.0);
                 inventory.add(target.0); // Remove the item from the ground
                 commands.entity(target.0).remove::<Position>();
             }
@@ -121,6 +122,7 @@ pub fn walk_system(
         With<Moving>,
     >,
 ) {
+    let mut planned_moves = Vec::new();
     for (
         entity,
         mut timer,
@@ -135,39 +137,41 @@ pub fn walk_system(
         } else if *timer <= *game_time
             && entity_map.get(path.0[0].x, path.0[0].y).is_none()
         {
-            let next_step = path.0.remove(0);
+            if !planned_moves.contains(&path.0[0]) {
+                let next_step = path.0.remove(0);
+                planned_moves.push(next_step);
 
-            let next_direction = next_step - *position;
-            match next_direction {
-                world::Position { x: 1, .. } => {
-                    *orientation = Orientation(Direction::Up);
+                let next_direction = next_step - *position;
+                match next_direction {
+                    world::Position { x: 1, .. } => {
+                        *orientation = Orientation(Direction::Up);
+                    }
+                    world::Position { x: -1, .. } => {
+                        *orientation = Orientation(Direction::Down);
+                    }
+                    world::Position { y: 1, .. } => {
+                        *orientation = Orientation(Direction::Right);
+                    }
+                    world::Position { y: -1, .. } => {
+                        *orientation = Orientation(Direction::Left);
+                    }
+                    _ => (),
                 }
-                world::Position { x: -1, .. } => {
-                    *orientation = Orientation(Direction::Down);
-                }
-                world::Position { y: 1, .. } => {
-                    *orientation = Orientation(Direction::Right);
-                }
-                world::Position { y: -1, .. } => {
-                    *orientation = Orientation(Direction::Left);
-                }
-                _ => (),
+                // Destructure for convenience
+                let old_x = position.x;
+                let old_y = position.y;
+
+                let new_x = next_step.x;
+                let new_y = next_step.y;
+                // Mark previous tile as unoccupied
+                entity_map.set(old_x, old_y, None);
+                // Move the actor
+                *position = next_step;
+                // Mark next tile as occupied
+                entity_map.set(new_x, new_y, Some(entity));
+                // Set time of next action
+                *timer = game_time.copy_and_tick_seconds(1);
             }
-            // Destructure for convenience
-            let old_x = position.x;
-            let old_y = position.y;
-
-            let new_x = next_step.x;
-            let new_y = next_step.y;
-
-            // Mark previous tile as unoccupied
-            entity_map.set(old_x, old_y, None);
-            // Move the actor
-            *position = next_step;
-            // Mark next tile as occupied
-            entity_map.set(new_x, new_y, Some(entity));
-            // Set time of next action
-            *timer = game_time.copy_and_tick_seconds(1);
         } else {
             *timer = game_time.copy_and_tick_seconds(0);
         }

@@ -12,27 +12,6 @@ pub struct FindingFood;
 
 pub struct Eating;
 
-pub fn validate_food_target(
-    mut commands: Commands,
-    mut query: Query<(Entity, &Position, &Target), With<Moving>>,
-    food_query: Query<&item::NutritionValue, With<Position>>,
-) {
-    for (actor, position, target) in query.iter_mut() {
-        match food_query.get(target.0) {
-            Ok(_) => println!("Did not stop"),
-            Err(_) => {
-                commands
-                    .entity(actor)
-                    .remove::<Moving>()
-                    .remove::<Target>()
-                    .remove::<Destination>()
-                    .insert(Destination(*position));
-                println!("Stopped");
-            }
-        }
-    }
-}
-
 pub fn find_food_system(
     mut commands: Commands,
     mut actors: Query<
@@ -63,10 +42,6 @@ pub fn find_food_system(
             let target_location = food_location.unwrap();
             commands.entity(actor).remove::<FindingFood>();
             if position == &target_location {
-                println!(
-                    "Entity at {:?} is picking up item at {:?}",
-                    position, target_location
-                );
                 commands.entity(actor).insert(target).insert(PickingUp);
             } else {
                 commands
@@ -141,7 +116,6 @@ pub fn eating_ai(
                                 .entity(actor)
                                 .insert(Moving)
                                 .remove::<Destination>()
-                                .remove::<Path>()
                                 .insert(Destination(*location));
                         }
                     }

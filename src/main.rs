@@ -4,27 +4,73 @@ use bevy::{diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin},
            ecs::{archetype::Archetypes, component::Components,
                  entity::Entities},
            prelude::*};
+use bevy_console::*;
 use bevy_ecs_tilemap::prelude::*;
+use bevy_egui::EguiPlugin;
 use pretty_trace::*;
 use rand::Rng;
 
 mod engine;
 
+use bevy_mod_debug_console::{build_commands, match_commands, Pause};
+
 fn main() {
     PrettyTrace::new().on();
     App::build()
-        .insert_resource(ClearColor(Color::rgb(0.0, 0.0, 0.05)))
-        //.add_plugin(FrameTimeDiagnosticsPlugin::default())
-        //.add_plugin(LogDiagnosticsPlugin::default())
         .add_plugins(DefaultPlugins)
+        .insert_resource(ClearColor(Color::rgb(0.0, 0.0, 0.05)))
+        .add_plugin(ConsolePlugin)
+        .insert_resource(ConsoleConfiguration {
+            // override config here
+            ..Default::default()
+        })
+        .insert_resource(Pause(false))
+        .add_system(debug_console.system())
+        .add_plugin(FrameTimeDiagnosticsPlugin::default())
+        .add_plugin(LogDiagnosticsPlugin::default())
         .add_plugin(engine::render::GraphicsPlugin)
         .add_plugin(engine::actor::ActorPlugin)
         .add_plugin(engine::world::WorldPlugin)
         .add_plugin(TilemapPlugin)
         .add_plugin(TiledMapPlugin)
         .add_startup_system(add_people.system())
-        .add_system(inspect.system())
         .run();
+}
+
+fn debug_console(
+    mut console_events: EventReader<ConsoleCommandEntered>,
+    mut console_line: EventWriter<PrintConsoleLine>,
+    a: &Archetypes,
+    c: &Components,
+    e: &Entities,
+    mut pause: ResMut<Pause>,
+    reflect: Res<bevy::reflect::TypeRegistry>,
+) {
+    let app_name = "";
+    for event in console_events.iter() {
+        let console_app = build_commands(app_name);
+        let mut args = vec![app_name];
+        args.push(&event.command);
+        let split = event.args.split_whitespace();
+        args.append(&mut split.collect());
+        let matches_result = console_app.try_get_matches_from(args);
+
+        if let Err(e) = matches_result {
+            console_line.send(PrintConsoleLine::new(e.to_string()));
+            return;
+        }
+
+        let output = match_commands(
+            &matches_result.unwrap(),
+            a,
+            c,
+            e,
+            &mut pause,
+            &*reflect,
+        );
+
+        console_line.send(PrintConsoleLine::new(output));
+    }
 }
 
 fn add_people(
@@ -34,7 +80,7 @@ fn add_people(
 ) {
     let mut x = 0;
 
-    while x < 10 {
+    while x < 100 {
         let x_range = RangeInclusive::new(0, 50);
         let y_range = x_range.clone();
         let mut rng = rand::thread_rng();
@@ -66,53 +112,5 @@ fn add_people(
             sprite_sheet,
         );
         x += 1;
-    }
-}
-
-// This should be moved to engine::actor module
-fn new_destination(
-    mut commands: Commands,
-    query: Query<
-        Entity,
-        (
-            With<engine::world::Position>,
-            Without<engine::world::Destination>,
-        ),
-    >,
-) {
-    for entity in query.iter() {
-        let x_range = RangeInclusive::new(0, 199);
-        let y_range = x_range.clone();
-        let mut rng = rand::thread_rng();
-        let x = rng.gen_range(x_range);
-        let y = rng.gen_range(y_range);
-        let destination =
-            engine::world::Destination(engine::world::Position { x, y });
-        commands.entity(entity).insert(destination);
-    }
-}
-
-fn inspect(
-    keyboard: Res<Input<KeyCode>>,
-    all_entities: Query<Entity>,
-    entities: &Entities,
-    archetypes: &Archetypes,
-    components: &Components,
-) {
-    if keyboard.just_pressed(KeyCode::F1) {
-        for entity in all_entities.iter() {
-            println!("Entity: {:?}", entity);
-            if let Some(entity_location) = entities.get(entity) {
-                if let Some(archetype) =
-                    archetypes.get(entity_location.archetype_id)
-                {
-                    for component in archetype.components() {
-                        if let Some(info) = components.get_info(component) {
-                            println!("\tComponent: {}", info.name());
-                        }
-                    }
-                }
-            }
-        }
     }
 }

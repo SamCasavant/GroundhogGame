@@ -9,11 +9,11 @@
 // entities want the same position, the first one to try will get it. The order
 // entities try in is not guaranteed to be deterministic (?)
 // Explicit system ordering is probably also needed.
-
-use std::cmp::min;
+// TODO: For performance, consider limiting the number of pathfinding calls an
+// entity can make per time
 
 use bevy::prelude::*;
-use pathfinding::prelude::{absdiff, astar};
+use pathfinding::prelude::astar;
 
 use crate::engine::world::{Destination, Position, TileEntityMap, TileWeightMap};
 
@@ -144,7 +144,7 @@ fn best_nearest_valid_destination(
 
 pub fn plan_path(
     mut commands: Commands,
-    query: Query<(Entity, &Position, &Destination), Without<Path>>,
+    query: Query<(Entity, &Position, &Destination), (Changed<Destination>)>,
     weight_map: Res<TileWeightMap>,
 ) {
     for (entity, position, destination) in query.iter() {
@@ -152,7 +152,9 @@ pub fn plan_path(
         if let Some(p) = plan {
             if !p.is_empty() {
                 commands.entity(entity).insert(Path(p));
+            } else {
             }
+        } else {
         }
     }
 }

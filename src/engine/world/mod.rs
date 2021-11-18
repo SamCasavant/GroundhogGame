@@ -172,6 +172,12 @@ impl TileEntityMap {
         y: i64,
         entity: Option<Entity>,
     ) {
+        //===TODO===//
+        // This check should be removed when pathfinding conflicts are resolved.
+        if self.get(x, y).is_some() && entity.is_some() {
+            panic!("TILE CONFLICT")
+        }
+        //==========//
         if 0 <= x && x < self.width && 0 <= y && y < self.height {
             let index = (y * self.width + x) as usize;
             self.map[index] = entity;
@@ -204,7 +210,7 @@ impl Plugin for WorldPlugin {
             .add_startup_system(init_tilemaps.system())
             //.add_system(plan_path.system().label("preparation"))
             .add_plugin(time::TimePlugin)
-            .insert_resource(item::HamburgerTimer(Timer::from_seconds(3.0, true)))
+            .insert_resource(item::HamburgerTimer(Timer::from_seconds(0.4, true)))
             .add_system(item::spawn_hamburger_every_second.system());
     }
 }
@@ -227,50 +233,3 @@ fn init_tilemaps(
         ..Default::default()
     });
 }
-
-// pub fn move_weights(
-//     position: &Position,
-//     tilemap: &ResMut<TileMap>,
-// ) -> Vec<(Position, u32)> {
-//     let &Position { x, y } = position;
-//     let mut weights = Vec::<(Position, u32)>::new();
-//     for next_x in &[-1, 0, 1] {
-//         for next_y in &[-1, 0, 1] {
-//             let next_position = Position {
-//                 x: x + next_x,
-//                 y: y + next_y,
-//             };
-//             let tile_weight = tile_weight(next_position, tilemap);
-//             if tile_weight != u32::MAX && next_position != *position {
-//                 weights.push((next_position, tile_weight));
-//             }
-//         }
-//     }
-//     println!("Weights: {:?}", weights);
-//     weights
-// }
-
-// fn tile_weight(
-//     position: Position,
-//     tilemap: &ResMut<TileMap>,
-// ) -> u32 {
-//     let mut weight = 1;
-//     if tilemap.map.contains_key(&position) {
-//         match tilemap.map[&position] {
-//             Tile {
-//                 ground_type: GroundType::Obstacle,
-//                 ..
-//             } => weight = u32::MAX,
-//             Tile {
-//                 ground_type: GroundType::Street,
-//                 ..
-//             } => weight = 10,
-//             _ => weight = 1,
-//         }
-//         if tilemap.map[&position].occupied {
-//             weight = u32::MAX;
-//         }
-//     }
-
-//     weight
-// }
