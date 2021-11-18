@@ -21,10 +21,10 @@ pub struct GameTime {
 }
 
 impl GameTime {
-    pub fn from_stamp(time: &Stamp) -> Self {
+    pub const fn from_stamp(time: &Stamp) -> Self {
         let mut raw = 0;
-        raw += time.day * 86400;
-        raw += time.hour * 3600;
+        raw += time.day * 86_400;
+        raw += time.hour * 3_600;
         raw += time.minute * 60;
         raw += time.second;
         Self { raw }
@@ -39,24 +39,24 @@ impl GameTime {
         &mut self,
         seconds: u32,
     ) {
-        self.raw += 60 * seconds
+        self.raw += 60 * seconds;
     }
 
     // Analog Clock Functions (floor output for digital):
-    fn get_day(self) -> f32 { self.raw as f32 / 5184000.0 }
-    fn get_hour(self) -> f32 {
+    fn get_day(self) -> f64 { f64::from(self.raw) / 5_184_000.0 }
+    fn get_hour(self) -> f64 {
         // hours since new day
-        (self.raw % 5184000) as f32 / 216000.0
+        f64::from(self.raw % 5_184_000) / 216_000.0
     }
-    fn get_minute(self) -> f32 {
+    fn get_minute(self) -> f64 {
         // minutes since new hour
-        (self.raw % 216000) as f32 / 3600.0
+        f64::from(self.raw % 216_000) / 3_600.0
     }
-    fn get_second(self) -> f32 {
+    fn get_second(self) -> f64 {
         // seconds since new minute
-        (self.raw % 3600) as f32 / 60.0
+        f64::from(self.raw % 3_600) / 60.0
     }
-    fn get_frame(self) -> f32 { (self.raw % 60) as f32 }
+    const fn get_frame(self) -> f64 { (self.raw % 60) as f64 }
     pub fn get_stamp(self) -> Stamp {
         Stamp {
             day:    self.get_day().floor() as u32,
@@ -77,17 +77,7 @@ impl GameTime {
         frames.unwrap_or(0) // Returns 0 when other.raw is the current time or
                             // earlier
     }
-    pub fn copy_and_tick_seconds(
-        self,
-        seconds: u32,
-    ) -> Self {
-        // Produces a new time instance at a later point for scheduling relative
-        // to self
-        Self {
-            raw: self.raw + 60 * seconds,
-        }
-    }
-    pub fn copy_and_tick(
+    pub const fn copy_and_tick(
         self,
         frames: u32,
     ) -> Self {
@@ -122,7 +112,7 @@ impl PartialEq for GameTime {
     }
 }
 
-pub struct GameTimeRate(f32);
+pub struct GameTimeRate(f64);
 
 struct GameInWatch(Stopwatch);
 
@@ -134,18 +124,17 @@ fn advance_time(
 ) {
     realtimer.0.tick(realtime.delta());
 
-    let step = realtimer.0.elapsed().mul_f32(rate.0).mul_f32(60.0);
+    let step = realtimer.0.elapsed().mul_f64(rate.0).mul_f64(60.0);
     let frames = step.as_secs();
-    localtime.tick(frames as u32);
+    localtime.tick(frames.try_into().ok().unwrap()); // Panics on overflow, which *should* never happen but should cause panic
 
     let remainder = (step - Duration::new(frames, 0))
-        .div_f32(rate.0)
-        .div_f32(60.0);
+        .div_f64(rate.0)
+        .div_f64(60.0);
     realtimer.0.set_elapsed(remainder);
 }
 
-use bevy::core::CoreSystem;
-
+#[allow(clippy::module_name_repetitions)]
 pub struct TimePlugin;
 impl Plugin for TimePlugin {
     fn build(

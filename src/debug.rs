@@ -1,7 +1,8 @@
 use bevy::diagnostic::FrameTimeDiagnosticsPlugin;
 use bevy::ecs::{archetype::Archetypes, component::Components, entity::Entities};
 use bevy::prelude::*;
-use bevy_console::*;
+use bevy_console::{ConsoleCommandEntered, ConsoleConfiguration, ConsolePlugin,
+                   PrintConsoleLine};
 use bevy_mod_debug_console::{build_commands, match_commands, Pause};
 
 pub struct DebugPlugin;

@@ -2,13 +2,30 @@
 // This file should be an interface between the engine and external world
 // building scripts.
 
+use bevy::app::PluginGroupBuilder;
 use bevy::prelude::*;
 pub mod actor;
 pub mod render;
+pub mod ui;
 // When pub people run in pub circles it's a very, very
 pub mod world;
 
 pub use bevy_ecs_tilemap::prelude::*;
+
+pub struct GamePlugins;
+
+impl PluginGroup for GamePlugins {
+    fn build(
+        &mut self,
+        group: &mut PluginGroupBuilder,
+    ) {
+        group
+            .add(ui::UIPlugin)
+            .add(render::GraphicsPlugin)
+            .add(actor::ActorPlugin)
+            .add(world::WorldPlugin);
+    }
+}
 
 #[derive(Bundle)]
 struct ActorComponents {

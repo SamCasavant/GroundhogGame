@@ -2,19 +2,16 @@ use std::ops::RangeInclusive;
 
 use bevy::prelude::*;
 use bevy_ecs_tilemap::prelude::*;
-use pretty_trace::*;
+use pretty_trace::PrettyTrace;
 use rand::Rng;
 mod debug;
 mod engine;
-
 fn main() {
     PrettyTrace::new().on();
     App::build()
         .add_plugins(DefaultPlugins)
+        .add_plugins(engine::GamePlugins)
         .add_plugin(debug::DebugPlugin)
-        .add_plugin(engine::render::GraphicsPlugin)
-        .add_plugin(engine::actor::ActorPlugin)
-        .add_plugin(engine::world::WorldPlugin)
         .add_plugin(TilemapPlugin)
         .add_plugin(TiledMapPlugin)
         .add_startup_system(add_people.system())

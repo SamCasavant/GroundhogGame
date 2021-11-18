@@ -15,16 +15,22 @@
 use bevy::prelude::*;
 use pathfinding::prelude::astar;
 
-use crate::engine::world::{Destination, Position, TileEntityMap, TileWeightMap};
+use crate::engine::{actor::ai::Moving,
+                    world::{Destination, Position, TileEntityMap,
+                            TileWeightMap}};
 
 #[derive(Clone)]
 pub struct Path(pub Vec<Position>);
 
 pub fn local_avoidance(
-    // mut commands: Commands,
+    // TODO: This shouldn't be a system anymore
+    mut commands: Commands,
     entity_map: Res<TileEntityMap>,
     weight_map: Res<TileWeightMap>,
-    mut query: Query<(Entity, &Position, &mut Path, &Destination)>,
+    mut query: Query<
+        (Entity, &Position, &mut Path, &Destination),
+        With<Moving>,
+    >,
 ) {
     // This system routes an entity's path around local entities. It first
     // checks if there are neighbors in the vicinity of an entity. If there
@@ -34,7 +40,7 @@ pub fn local_avoidance(
     // change
     for (entity, position, mut path, destination) in query.iter_mut() {
         debug!("Performing local avoidance for {:?}.", entity);
-        let nearby_entities = nearby_entities(position, 1, &entity_map);
+        let nearby_entities = nearby_entities(*position, 1, &entity_map);
         if nearby_entities.is_some() && !path.0.is_empty() {
             if path.0.len() == 1
                 && entity_map.get(path.0[0].x, path.0[0].y).is_some()
@@ -55,9 +61,9 @@ pub fn local_avoidance(
                 };
                 let local_destination = path.0[index];
                 let valid_destination = best_nearest_valid_destination(
-                    position,
-                    &local_destination,
-                    &destination.0,
+                    *position,
+                    local_destination,
+                    destination.0,
                     &weight_map,
                     &entity_map,
                 );
@@ -65,41 +71,40 @@ pub fn local_avoidance(
                 if valid_destination.is_some() {
                     debug!("Local avoidance path found.");
                     let local_path = get_path_around_entities(
-                        position,
-                        &local_destination,
+                        *position,
+                        local_destination,
                         &weight_map,
                         &entity_map,
                     );
-                    path.0 = match local_path {
-                        Some(mut p) => {
-                            if p.last()
-                                .unwrap()
-                                .neighbors(1)
-                                .contains(&path.0[index])
-                            {
-                                // If the old path can be affixed to the new
-                                // one:
-                                debug!(
-                                    "Local avoidance path can be reattached."
-                                );
-                                p.extend(path.0[index + 1..].iter().cloned());
-                            }
-                            p
+                    path.0 = if let Some(mut p) = local_path {
+                        if p.last()
+                            .unwrap()
+                            .neighbors(1)
+                            .contains(&path.0[index])
+                        {
+                            // TODO: This doesn't cover all cases
+                            // If the old path can be affixed to the new
+                            // one:
+                            debug!("Local avoidance path can be reattached.");
+                            p.extend(path.0[index + 1..].iter().copied());
                         }
-                        None => vec![*position],
+                        p
+                    } else {
+                        vec![*position]
                     }
-                } else {
-                    debug!("No local avoidance path found, resetting path.");
-                    path.0 = Vec::<Position>::new();
                 }
+            } else {
+                // TODO: Figure out a way to hold onto this perfectly good path
+                debug!("No local avoidance path found, requesting new path.");
+                commands.entity(entity).insert(NeedsPath);
             }
         }
     }
 }
 
 fn nearby_entities(
-    position: &Position,
-    range: i64,
+    position: Position,
+    range: u32,
     entity_map: &Res<TileEntityMap>,
 ) -> Option<Vec<Entity>> {
     let mut nearby_entities = Vec::new();
@@ -117,60 +122,59 @@ fn nearby_entities(
 
 fn best_nearest_valid_destination(
     // Make these arguments make sense without comments, but for now:
-    position: &Position,    // Current position of entity
-    target: &Position,      // Intended nearby destination
-    destination: &Position, // Final destination
+    position: Position,    // Current position of entity
+    target: Position,      // Intended nearby destination
+    destination: Position, // Final destination
     weight_map: &Res<TileWeightMap>,
     entity_map: &Res<TileEntityMap>,
-    // mut search_range: u32,
 ) -> Option<Position> {
     if entity_map.get(target.x, target.y).is_none()
         && weight_map.get(target.x, target.y) < i64::MAX
     {
-        return Some(*target);
+        return Some(target);
     }
     let min_weight = weight_map.get(position.x, position.y);
     let min_distance = position.diagonal_distance(destination);
     let mut valid_destination = None;
     for neighbor in neighbors_except_entities(target, weight_map, entity_map) {
         let weight = neighbor.1;
-        let distance = target.diagonal_distance(&neighbor.0);
-        if weight * distance < min_weight * min_distance {
+        let distance = target.diagonal_distance(neighbor.0);
+        if weight * (distance as i64) < min_weight * (min_distance as i64) {
             valid_destination = Some(neighbor.0);
         }
     }
 
-    // search_range -= 1;
     if valid_destination.is_some() {
         valid_destination
-    //} else if search_range > 0 {
-    //    todo!() // This function could be rewritten to be recursive when it
-    // inevitably comes up
     } else {
         None
     }
 }
 
+pub struct NeedsPath;
+
 pub fn plan_path(
     mut commands: Commands,
-    query: Query<(Entity, &Position, &Destination), Changed<Destination>>,
+    query: Query<(Entity, &Position, &Destination), With<NeedsPath>>,
     weight_map: Res<TileWeightMap>,
 ) {
     for (entity, position, destination) in query.iter() {
-        let plan = get_path(position, &destination.0, &weight_map);
+        debug!("Performing pathfinding for entity: {:?}", entity);
+        let plan = get_path(*position, destination.0, &weight_map);
         if let Some(p) = plan {
             if !p.is_empty() {
-                commands.entity(entity).insert(Path(p));
-            } else {
+                commands
+                    .entity(entity)
+                    .insert(Path(p))
+                    .remove::<NeedsPath>();
             }
-        } else {
         }
     }
 }
 
 pub fn get_path(
-    position: &Position,
-    destination: &Position,
+    position: Position,
+    destination: Position,
     weight_map: &Res<TileWeightMap>,
 ) -> Option<Vec<Position>> {
     let mut path = Vec::new();
@@ -178,29 +182,27 @@ pub fn get_path(
         panic!("Destination is inaccessible")
     }
     let plan = astar(
-        position,
-        |p| neighbors_with_weights(p, weight_map),
-        |p| p.diagonal_distance(destination),
+        &position,
+        |p| neighbors_with_weights(*p, weight_map),
+        |p| p.diagonal_distance(destination).into(),
         |p| {
-            *p == *destination
+            *p == destination
                 || p.diagonal_distance(destination)
                     > 4 * position.diagonal_distance(destination)
         },
     )
-    .unwrap_or((vec![*position], 0));
-    if plan.0.last() == Some(destination) {
+    .unwrap_or((vec![position], 0));
+    (plan.0.last() == Some(&destination)).then(|| {
         for step in plan.0 {
             path.push(step);
         }
         path.remove(0);
-        Some(path)
-    } else {
-        None
-    }
+        path
+    })
 }
 
 pub fn neighbors_with_weights(
-    position: &Position,
+    position: Position,
     weight_map: &Res<TileWeightMap>,
 ) -> Vec<(Position, i64)> {
     let mut neighbors = Vec::new();
@@ -211,7 +213,7 @@ pub fn neighbors_with_weights(
         }
     }
     for Position { x, y } in position.corner_neighbors() {
-        let weight = ((weight_map.get(x, y) as f64) * 2_f64.sqrt()) as i64;
+        let weight = ((weight_map.get(x, y) as f64) * 2f64.sqrt()) as i64;
         if weight < i64::MAX {
             neighbors.push((Position { x, y }, weight));
         }
@@ -219,38 +221,35 @@ pub fn neighbors_with_weights(
     neighbors
 }
 fn get_path_around_entities(
-    position: &Position,
-    destination: &Position,
+    position: Position,
+    destination: Position,
     weight_map: &Res<TileWeightMap>,
     entity_map: &Res<TileEntityMap>,
 ) -> Option<Vec<Position>> {
     let mut path = Vec::new();
 
     let plan = astar(
-        position,
-        |p| neighbors_except_entities(p, weight_map, entity_map),
-        |p| p.diagonal_distance(destination),
+        &position,
+        |p| neighbors_except_entities(*p, weight_map, entity_map),
+        |p| p.diagonal_distance(destination).into(),
         |p| {
-            *p == *destination
+            *p == destination
                 || p.diagonal_distance(destination)
                     > 4 * position.diagonal_distance(destination)
         },
     )
-    .unwrap_or((vec![*position], 0));
-
-    if plan.0.last() == Some(destination) {
+    .unwrap_or((vec![position], 0));
+    (plan.0.last() == Some(&destination)).then(|| {
         for step in plan.0 {
             path.push(step);
         }
         path.remove(0);
-        Some(path)
-    } else {
-        None
-    }
+        path
+    })
 }
 
 fn neighbors_except_entities(
-    position: &Position,
+    position: Position,
     weight_map: &Res<TileWeightMap>,
     entity_map: &Res<TileEntityMap>,
 ) -> Vec<(Position, i64)> {
@@ -263,10 +262,11 @@ fn neighbors_except_entities(
         }
     }
     for Position { x, y } in position.corner_neighbors() {
-        let weight = ((weight_map.get(x, y) as f64) * 2_f64.sqrt()) as i64; // TODO: Investigate if I can avoid this double casting
+        let weight = weight_map.get(x, y);
+        let distance_adjusted_weight = ((weight as f64) * 2f64.sqrt()) as i64;
         let entity = entity_map.get(x, y);
-        if entity.is_none() && weight < i64::MAX {
-            neighbors.push((Position { x, y }, weight));
+        if entity.is_none() && distance_adjusted_weight < i64::MAX {
+            neighbors.push((Position { x, y }, distance_adjusted_weight));
         }
     }
     neighbors

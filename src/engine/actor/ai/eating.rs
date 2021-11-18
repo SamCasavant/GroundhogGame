@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 use crate::engine::world::{item, Destination, Position};
-use crate::engine::{actor::{ai::{Moving, PickingUp,
+use crate::engine::{actor::{ai::{pathfinding::NeedsPath, Moving, PickingUp,
                                  Target},
                             Inventory, Status},
                     world::item::NutritionValue};
@@ -25,12 +25,14 @@ pub fn find_food_system(
     // be ignored
     // TODO: This is about the slowest way this can work OPTIMIZE ME!
     for (actor, position) in actors.iter_mut() {
-        let mut min_distance = i64::MAX;
+        commands.entity(actor).remove::<Moving>();
+        let mut min_distance = u32::MAX;
         let mut selected_food = None;
         let mut food_location = None;
         for (food, food_position) in foods.iter() {
             // Todo: Make this pathfinding distance (at cost)
-            let food_distance = position.diagonal_distance(food_position);
+            let food_distance = position.diagonal_distance(*food_position);
+            println!("food distance: {:?}", food_distance);
             if food_distance < min_distance {
                 min_distance = food_distance;
                 selected_food = Some(food);
@@ -59,7 +61,8 @@ pub fn find_food_system(
                     .insert(target)
                     .insert(Moving)
                     .remove::<Destination>()
-                    .insert(Destination(target_location));
+                    .insert(Destination(target_location))
+                    .insert(NeedsPath);
             }
         }
     }
@@ -76,14 +79,15 @@ pub fn eat_system(
     // Eats an object out of the inventory
     // Do not enter Eating state without target object in inventory
     for (actor, mut inventory, target, mut status) in actors.iter_mut() {
+        commands.entity(actor).remove::<Moving>();
         debug!("Entity: {:?} is eating {:?}", actor, target.0);
-        let food_entity = inventory.remove(&target.0).unwrap();
+        let food_entity = inventory.remove(target.0).unwrap();
         match foods.get(food_entity) {
-            Ok(item::NutritionValue(value)) => {
-                if value >= &status.hunger {
+            Ok(&item::NutritionValue(value)) => {
+                if value >= status.hunger {
                     status.hunger = 0;
                 } else {
-                    status.hunger -= value
+                    status.hunger -= value;
                 }
                 commands.entity(food_entity).despawn();
             }
@@ -101,7 +105,12 @@ pub fn eating_ai(
     mut commands: Commands,
     query: Query<
         (Entity, &Inventory, &Position),
-        (With<EatGoal>, Without<(PickingUp, Eating, FindingFood)>),
+        (
+            With<EatGoal>,
+            Without<PickingUp>,
+            Without<Eating>,
+            Without<FindingFood>,
+        ),
     >,
     target_query: Query<&Target>,
     food_query: Query<(Entity, &NutritionValue, &Position)>,
@@ -112,88 +121,64 @@ pub fn eating_ai(
     // Currently this also handles stopping movement, but TODO not anymore
 
     for (actor, inventory, position) in query.iter() {
-        match target_query.get(actor) {
-            Ok(target) => {
-                // Entity already has target
-                match food_query.get(target.0) {
-                    Ok((_food, _nutritionvalue, location)) => {
-                        // Target is on the map
-                        if position == location {
-                            debug!(
-                                "Entity {:?} is at target {:?}, setting \
-                                 active task to PickingUp.",
-                                actor, target.0
-                            );
-                            commands
-                                .entity(actor)
-                                .remove::<Moving>()
-                                .insert(PickingUp);
-                        } else {
-                            debug!(
-                                "Entity {:?} has target {:?}, setting active \
-                                 state to Moving.",
-                                actor, target.0
-                            );
-                            commands
-                                .entity(actor)
-                                .insert(Moving)
-                                .remove::<Destination>()
-                                .insert(Destination(*location));
-                        }
-                    }
-
-                    Err(_) => {
-                        if inventory.contains(&target.0) {
-                            debug!(
-                                "Entity {:?} has target {:?} in inventory, \
-                                 switching active state to Eating.",
-                                actor, target.0
-                            );
-                            commands.entity(actor).insert(Eating);
-                        } else {
-                            debug!(
-                                "Entity {:?} has lost track of target {:?}, \
-                                 removing target and cancelling movement.",
-                                actor, target.0
-                            );
-                            commands
-                                .entity(actor)
-                                .remove::<Target>()
-                                .remove::<Moving>();
-                        }
+        if let Ok(target) = target_query.get(actor) {
+            // Entity already has target
+            if let Ok((_food, _nutritionvalue, location)) =
+                food_query.get(target.0)
+            {
+                // Target is on the map
+                if position == location {
+                    debug!(
+                        "Entity {:?} is at target {:?}, setting active task \
+                         to PickingUp.",
+                        actor, target.0
+                    );
+                    commands.entity(actor).remove::<Moving>().insert(PickingUp);
+                }
+            } else if inventory.contains(target.0) {
+                debug!(
+                    "Entity {:?} has target {:?} in inventory, switching \
+                     active state to Eating.",
+                    actor, target.0
+                );
+                commands.entity(actor).insert(Eating);
+            } else {
+                debug!(
+                    "Entity {:?} has lost track of target {:?}, removing \
+                     target and cancelling movement.",
+                    actor, target.0
+                );
+                commands.entity(actor).remove::<Target>().remove::<Moving>();
+            }
+        } else {
+            // Entity needs target
+            let mut owned_food = None;
+            let mut max_nutrition_value = 0;
+            for object in &inventory.contents {
+                if let Ok(result) = food_query.get(*object) {
+                    let (food, nutrition_value, _position) = result;
+                    // TODO: Max nutrition value is a strange thing to
+                    // optimize for here.
+                    if nutrition_value.0 > max_nutrition_value {
+                        max_nutrition_value = nutrition_value.0;
+                        owned_food = Some(food);
                     }
                 }
             }
-            Err(_) => {
-                // Entity needs target
-                let mut owned_food = None;
-                let mut max_nutrition_value = 0;
-                for object in &inventory.contents {
-                    if let Ok(result) = food_query.get(*object) {
-                        let (food, nutrition_value, _position) = result;
-                        // TODO: Max nutrition value is a strange thing to
-                        // optimize for here.
-                        if nutrition_value.0 > max_nutrition_value {
-                            max_nutrition_value = nutrition_value.0;
-                            owned_food = Some(food);
-                        }
-                    }
-                }
-                if let Some(food) = owned_food {
-                    debug!(
-                        "Entity {:?} has target {:?} in inventory, switching \
-                         active state to Eating.",
-                        actor, food
-                    );
-                    commands.entity(actor).insert(Target(food)).insert(Eating);
-                } else {
-                    debug!(
-                        "Entity {:?} has no food readily available, switching \
-                         active state to FindingFood.",
-                        actor
-                    );
-                    commands.entity(actor).insert(FindingFood);
-                }
+            if let Some(food) = owned_food {
+                debug!(
+                    "Entity {:?} has target {:?} in inventory, switching \
+                     active state to Eating.",
+                    actor, food
+                );
+                commands.entity(actor).insert(Target(food)).insert(Eating);
+            } else {
+                debug!(
+                    "Entity {:?} has no food readily available, switching \
+                     active state to FindingFood.",
+                    actor
+                );
+                commands.entity(actor).insert(FindingFood);
             }
         }
     }

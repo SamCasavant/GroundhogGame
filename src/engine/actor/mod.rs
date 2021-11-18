@@ -4,6 +4,27 @@ use crate::engine::world;
 
 mod ai;
 
+pub struct ActorPlugin;
+
+impl Plugin for ActorPlugin {
+    fn build(
+        &self,
+        app: &mut AppBuilder,
+    ) {
+        app.insert_resource(AnimalTimer(world::time::GameTime::from_stamp(
+            &world::time::Stamp {
+                day:    0,
+                hour:   6,
+                minute: 0,
+                second: 0,
+                frame:  0,
+            },
+        )))
+        .add_system(animal_processes.system().label("preparation"))
+        .add_plugin(ai::AIPlugin);
+    }
+}
+
 pub struct Inventory {
     // Every actor should have an inventory component; animals can have an
     // inventory of size 1.
@@ -13,9 +34,9 @@ pub struct Inventory {
 impl Inventory {
     fn contains(
         &self,
-        entity: &Entity,
+        entity: Entity,
     ) -> bool {
-        self.contents.contains(entity)
+        self.contents.contains(&entity)
     }
     fn add(
         &mut self,
@@ -30,12 +51,12 @@ impl Inventory {
     }
     fn remove(
         &mut self,
-        entity: &Entity,
+        entity: Entity,
     ) -> Option<Entity> {
         for index in 0..self.contents.len() {
-            if self.contents[index] == *entity {
+            if self.contents[index] == entity {
                 self.contents.remove(index);
-                return Some(*entity);
+                return Some(entity);
             }
         }
         None
@@ -54,31 +75,6 @@ pub struct Status {
     pub thirst:   u32,
 }
 
-pub struct ActorPlugin;
-
-impl Plugin for ActorPlugin {
-    fn build(
-        &self,
-        app: &mut AppBuilder,
-    ) {
-        app.insert_resource(AnimalTimer(world::time::GameTime::from_stamp(
-            &world::time::Stamp {
-                day:    0,
-                hour:   6,
-                minute: 0,
-                second: 0,
-                frame:  0,
-            },
-        )))
-        //TODO: Move this to ai
-
-        .add_system(animal_processes.system().label("preparation"))
-        .add_plugin(ai::AIPlugin);
-        // .add_system(AI::choose_next_goal.system().label("planning"))
-        // .add_system(move_actor.system().label("action").after("planning"));
-    }
-}
-
 pub struct Animal; // Component marker for animals (including humans)
 
 struct AnimalTimer(world::time::GameTime);
@@ -93,7 +89,7 @@ fn animal_processes(
         for mut status in query.iter_mut() {
             status.hunger += 1;
         }
-        *timer = AnimalTimer(game_time.copy_and_tick(10));
+        *timer = AnimalTimer(game_time.copy_and_tick(300));
     }
 }
 
