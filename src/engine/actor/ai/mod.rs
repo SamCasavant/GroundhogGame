@@ -124,7 +124,7 @@ fn pick_up_system(
                 actor
             );
         }
-        if let Ok(_) = object_query.get(target.0) {
+        if object_query.get(target.0).is_ok() {
             debug!("Entity: {:?} is picking up {:?}", actor, target.0);
             inventory.add(target.0); // Remove the item from the ground
             commands.entity(target.0).remove::<Position>();

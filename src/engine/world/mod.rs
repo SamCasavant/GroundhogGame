@@ -59,11 +59,11 @@ impl Position {
         radius: u32,
     ) -> Vec<Self> {
         let mut neighbors = Vec::new();
-        let x_min = self.x.checked_sub(radius).unwrap_or(0);
-        let x_max = self.x.checked_add(radius).unwrap_or(u32::MAX);
+        let x_min = self.x.saturating_sub(radius);
+        let x_max = self.x.saturating_add(radius);
 
-        let y_min = self.y.checked_sub(radius).unwrap_or(0);
-        let y_max = self.y.checked_add(radius).unwrap_or(u32::MAX);
+        let y_min = self.y.saturating_sub(radius);
+        let y_max = self.y.saturating_add(radius);
         for x in x_min..=x_max {
             for y in y_min..=y_max {
                 let position = Self { x, y };
