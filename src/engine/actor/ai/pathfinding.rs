@@ -11,27 +11,27 @@
 // Explicit system ordering is probably also needed.
 // TODO: For performance, consider limiting the number of pathfinding calls an
 // entity can make per time
-// RESUME: Currently this is all very inefficient and does loads of needless
-// pathfinding. Fix that first.
 
 use bevy::prelude::*;
 use pathfinding::prelude::astar;
 
-use crate::engine::{actor::ai::Moving,
+use crate::engine::{actor::ai::{Frozen, Moving},
                     world::{Destination, Position, TileEntityMap,
                             TileWeightMap}};
 
 #[derive(Clone)]
 pub struct Path(pub Vec<Position>);
 
+const PATH_RANGE: u32 = 16; // Range multiplier for finding paths
+
 pub fn local_avoidance(
-    // TODO: This shouldn't be a system anymore
+    // TODO: Call this from walk system instead
     mut commands: Commands,
     entity_map: Res<TileEntityMap>,
     weight_map: Res<TileWeightMap>,
     mut query: Query<
         (Entity, &Position, &mut Path, &Destination),
-        With<Moving>,
+        (With<Moving>, Without<Frozen>),
     >,
 ) {
     // This system routes an entity's path around local entities. It first
@@ -41,18 +41,19 @@ pub fn local_avoidance(
     // paths to that. Failing that, it resets the path- that behavior should
     // change
     for (entity, position, mut path, destination) in query.iter_mut() {
-        debug!("Performing local avoidance for {:?}.", entity);
-        let nearby_entities = nearby_entities(*position, 1, &entity_map);
-        if nearby_entities.is_some() && !path.0.is_empty() {
-            if path.0.len() == 1
-                && entity_map.get(path.0[0].x, path.0[0].y).is_some()
-            // Panics on path of length 0, which are not supposed to exist here
-            {
+        if !path.0.is_empty()
+            && entity_map.get(path.0[0].x, path.0[0].y).is_some()
+        // FIXME: Does this cause index error on empty path?
+        {
+            debug!("Performing local avoidance for {:?}.", entity);
+            // let nearby_entities = nearby_entities(*position, 1, &entity_map);
+            // Note: Local avoidance should probably take this^ into account. My
+            // implementation doesn't yet.
+            if path.0.len() == 1 {
                 debug!(
-                    "Skipping local avoidance for entity, because destination \
-                     is inaccessible neighbor."
+                    "Destination is inaccessible neighbor, freezing entity."
                 );
-                path.0 = Vec::<Position>::new();
+                commands.entity(entity).insert(Frozen(20));
             } else if entity_map.get(path.0[0].x, path.0[0].y).is_some() {
                 let index = if path.0.len() == 2 {
                     1
@@ -71,54 +72,36 @@ pub fn local_avoidance(
                 );
 
                 if valid_destination.is_some() {
-                    debug!("Local avoidance path found.");
                     let local_path = get_path_around_entities(
                         *position,
                         local_destination,
                         &weight_map,
                         &entity_map,
                     );
-                    path.0 = if let Some(mut p) = local_path {
+
+                    if let Some(mut p) = local_path {
+                        debug!("Local avoidance path found.");
                         if p.last()
                             .unwrap()
                             .neighbors(1)
                             .contains(&path.0[index])
                         {
                             // TODO: This doesn't cover all cases
-                            // If the old path can be affixed to the new
-                            // one:
                             debug!("Local avoidance path can be reattached.");
                             p.extend(path.0[index + 1..].iter().copied());
                         }
-                        p
+                        path.0 = p;
                     } else {
-                        vec![*position]
+                        debug!(
+                            "No local avoidance path found, freezing entity."
+                        );
+                        commands.entity(entity).insert(Frozen(20));
                     }
                 }
             } else {
-                // TODO: Figure out a way to hold onto this perfectly good path
-                debug!("No local avoidance path found, requesting new path.");
-                commands.entity(entity).insert(NeedsPath);
+                debug!("Next step clear; skipping local avoidance.");
             }
         }
-    }
-}
-
-fn nearby_entities(
-    position: Position,
-    range: u32,
-    entity_map: &Res<TileEntityMap>,
-) -> Option<Vec<Entity>> {
-    let mut nearby_entities = Vec::new();
-    for near_position in position.neighbors(range) {
-        if let Some(entity) = entity_map.get(near_position.x, near_position.y) {
-            nearby_entities.push(entity);
-        }
-    }
-    if nearby_entities.is_empty() {
-        None
-    } else {
-        Some(nearby_entities)
     }
 }
 
@@ -190,7 +173,7 @@ pub fn get_path(
         |p| {
             *p == destination
                 || p.diagonal_distance(destination)
-                    > 4 * position.diagonal_distance(destination)
+                    > PATH_RANGE * position.diagonal_distance(destination)
         },
     )
     .unwrap_or((vec![position], 0));
@@ -237,7 +220,7 @@ fn get_path_around_entities(
         |p| {
             *p == destination
                 || p.diagonal_distance(destination)
-                    > 4 * position.diagonal_distance(destination)
+                    > PATH_RANGE * position.diagonal_distance(destination)
         },
     )
     .unwrap_or((vec![position], 0));

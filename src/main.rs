@@ -6,7 +6,9 @@ use pretty_trace::PrettyTrace;
 use rand::Rng;
 mod debug;
 mod engine;
+
 fn main() {
+    env_logger::init();
     PrettyTrace::new().on();
     App::build()
         .add_plugins(DefaultPlugins)

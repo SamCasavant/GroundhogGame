@@ -1,6 +1,7 @@
 // TODO: Implement fixed timestep so systems can catch up to render
 
 use std::cmp::Ordering;
+use std::fmt;
 use std::time::Duration;
 
 use bevy::{core::Stopwatch, prelude::*};
@@ -109,6 +110,20 @@ impl PartialEq for GameTime {
         other: &Self,
     ) -> bool {
         self.raw == other.raw
+    }
+}
+impl fmt::Debug for GameTime {
+    fn fmt(
+        &self,
+        f: &mut fmt::Formatter<'_>,
+    ) -> fmt::Result {
+        f.debug_struct("GameTime")
+            .field("day", &self.get_day().floor())
+            .field("hour", &self.get_hour().floor())
+            .field("minute", &self.get_minute().floor())
+            .field("second", &self.get_second().floor())
+            .field("frame", &self.get_frame())
+            .finish()
     }
 }
 

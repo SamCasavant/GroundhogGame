@@ -32,7 +32,6 @@ pub fn find_food_system(
         for (food, food_position) in foods.iter() {
             // Todo: Make this pathfinding distance (at cost)
             let food_distance = position.diagonal_distance(*food_position);
-            println!("food distance: {:?}", food_distance);
             if food_distance < min_distance {
                 min_distance = food_distance;
                 selected_food = Some(food);

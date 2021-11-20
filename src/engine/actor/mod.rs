@@ -20,7 +20,22 @@ impl Plugin for ActorPlugin {
                 frame:  0,
             },
         )))
-        .add_system(animal_processes.system().label("preparation"))
+        .insert_resource(FrozenTimer(world::time::GameTime::from_stamp(
+            &world::time::Stamp {
+                day:    0,
+                hour:   6,
+                minute: 0,
+                second: 0,
+                frame:  0,
+            },
+        )))
+        .add_system_set(
+            SystemSet::new()
+                .label("status update")
+                .before("ai")
+                .with_system(animal_processes.system())
+                .with_system(unfreeze.system()),
+        )
         .add_plugin(ai::AIPlugin);
     }
 }
@@ -86,6 +101,8 @@ fn animal_processes(
     mut timer: ResMut<AnimalTimer>,
 ) {
     if timer.0 <= *game_time {
+        debug!("Timer: {:?}", timer.0);
+        debug!("Game Time {:?}", *game_time);
         for mut status in query.iter_mut() {
             status.hunger += 1;
         }
@@ -93,7 +110,28 @@ fn animal_processes(
     }
 }
 
-pub struct Orientation(pub Direction);
+pub struct Frozen(u32); // Value represents duration in frames (1/60th second)
+
+struct FrozenTimer(world::time::GameTime);
+
+fn unfreeze(
+    mut commands: Commands,
+    mut frozen_entities: Query<(Entity, &mut Frozen)>,
+    mut timer: ResMut<FrozenTimer>,
+    game_time: Res<world::time::GameTime>,
+) {
+    if timer.0 <= *game_time {
+        for (entity, mut freeze_duration) in frozen_entities.iter_mut() {
+            freeze_duration.0 -= 1;
+            if freeze_duration.0 == 0 {
+                commands.entity(entity).remove::<Frozen>();
+            }
+        }
+    }
+    *timer = FrozenTimer(game_time.copy_and_tick(1));
+}
+
+pub struct Orientation(pub Direction); // TODO: Orientation hasn't really found a home yet.
 
 #[derive(Debug, Copy, Clone, PartialEq, Hash, Eq)]
 pub enum Direction {

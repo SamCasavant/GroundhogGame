@@ -3,8 +3,8 @@
 // state or direct assignment.
 use bevy::prelude::*;
 
-use crate::engine::actor::{Direction, Intelligent, Inventory, Orientation,
-                           Status};
+use crate::engine::actor::{Direction, Frozen, Intelligent, Inventory,
+                           Orientation, Status};
 use crate::engine::{world, world::Position};
 
 pub mod pathfinding;
@@ -35,32 +35,36 @@ impl Plugin for AIPlugin {
         &self,
         app: &mut AppBuilder,
     ) {
-        app.add_system(choose_next_goal.system().label("goal selection"))
-            .add_system(
-                eating::eating_ai
-                    .system()
-                    .label("ai")
-                    .after("goal selection")
-                    .before("action"),
-            )
-            .add_system(
-                pathfinding::plan_path
-                    .system()
-                    .label("prep")
-                    .after("ai")
-                    .before("action"),
-            )
-            .add_system(
-                pathfinding::local_avoidance
-                    .system()
-                    .label("post-prep")
-                    .after("preparation")
-                    .before("action"),
-            )
-            .add_system(walk_system.system().label("action"))
-            .add_system(eating::eat_system.system().label("action"))
-            .add_system(pick_up_system.system().label("action"))
-            .add_system(eating::find_food_system.system().label("action"));
+        app.add_system_set(
+            SystemSet::new()
+                .label("ai")
+                .with_system(choose_next_goal.system().label("goal ai"))
+                .with_system(
+                    eating::eating_ai
+                        .system()
+                        .label("task ai")
+                        .after("goal ai")
+                        .before("plan ai"),
+                )
+                .with_system(
+                    pathfinding::plan_path
+                        .system()
+                        .label("plan ai")
+                        .after("task ai")
+                        .before("post ai"),
+                )
+                .with_system(
+                    pathfinding::local_avoidance
+                        .system()
+                        .label("post ai")
+                        .after("plan ai")
+                        .before("action"),
+                ),
+        )
+        .add_system(walk_system.system().label("action"))
+        .add_system(eating::eat_system.system().label("action"))
+        .add_system(pick_up_system.system().label("action"))
+        .add_system(eating::find_food_system.system().label("action"));
     }
 }
 
@@ -150,7 +154,7 @@ pub fn walk_system(
             &world::Destination,
             &mut pathfinding::Path,
         ),
-        With<Moving>,
+        (With<Moving>, Without<Frozen>),
     >,
 ) {
     let mut planned_moves = Vec::new();
