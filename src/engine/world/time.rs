@@ -149,7 +149,6 @@ fn advance_time(
     realtimer.0.set_elapsed(remainder);
 }
 
-#[allow(clippy::module_name_repetitions)]
 pub struct TimePlugin;
 impl Plugin for TimePlugin {
     fn build(

@@ -15,7 +15,6 @@ use pathfinding::prelude::absdiff;
 pub mod item;
 pub mod time;
 
-#[allow(clippy::module_name_repetitions)]
 pub struct WorldPlugin;
 
 impl Plugin for WorldPlugin {

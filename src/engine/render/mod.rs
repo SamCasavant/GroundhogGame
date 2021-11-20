@@ -1,7 +1,7 @@
 // This module builds and draws sprites and spawns a camera. Its scope will
 // likely increase
 
-pub(crate) use bevy::prelude::*;
+use bevy::prelude::*;
 use bevy::render::draw::OutsideFrustum;
 
 use crate::engine::actor;
