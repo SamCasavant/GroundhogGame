@@ -2,43 +2,7 @@ use bevy::prelude::*;
 
 use crate::engine::world;
 
-pub struct Routine {
-    tasks: Option<Vec<ScheduledTask>>,
-}
-
-pub struct ScheduledTask {
-    task: Task,
-    time: world::time::GameTime,
-}
-
-#[derive(Copy, Clone)]
-pub struct Task {
-    action:     Action,
-    parameters: ActionParameters,
-    priority:   u32,
-}
-
-#[derive(Copy, Clone)]
-pub enum Action {
-    Wait,
-    Eat,
-}
-
-#[derive(Default, Copy, Clone)]
-pub struct ActionParameters {
-    location: Option<world::Position>,
-    target:   Option<Entity>,
-}
-
-pub struct Intelligent; // Intelligent actor component
-
-pub struct Status {
-    // Used for keeping track of actor state, values are primarily used for
-    // priority of subsequent action
-    hunger:   u32,
-    laziness: u32, /* Actor will prefer inaction over actions with lower
-                    * priority than laziness */
-}
+mod ai;
 
 pub struct ActorPlugin;
 
@@ -56,58 +20,77 @@ impl Plugin for ActorPlugin {
                 frame:  0,
             },
         )))
-        .add_system(pathfinding::plan_path.system().label("preparation"))
-        .add_system(
-            pathfinding::local_avoidance
-                .system()
-                .label("planning")
-                .after("preparation"),
-        )
-        .add_system(animal_processes.system().label("preparation"))
-        .add_system(choose_next_task.system().label("planning"))
-        .add_system(move_actor.system().label("action").after("planning"));
-    }
-}
-
-fn choose_next_task(
-    mut commands: Commands,
-    mut query: Query<
-        (Entity, &Status, &Routine),
-        (With<Intelligent>, Without<Task>),
-    >,
-    time: Res<world::time::GameTime>,
-) {
-    for (entity, status, routine) in query.iter_mut() {
-        let mut curtask = Task {
-            action:     Action::Wait,
-            parameters: ActionParameters {
-                ..Default::default()
+        .insert_resource(FrozenTimer(world::time::GameTime::from_stamp(
+            &world::time::Stamp {
+                day:    0,
+                hour:   6,
+                minute: 0,
+                second: 0,
+                frame:  0,
             },
-            priority:   status.laziness,
-        };
-        // TODO: Change priority calculation for scheduled events to incorporate
-        // eta
-        match &routine.tasks {
-            Some(tasks) => {
-                let priority = time.how_soon(tasks[0].time) / 60;
-                if priority > curtask.priority {
-                    curtask = tasks[0].task;
-                }
-            }
-            None => todo!(),
-        }
-        if status.hunger > curtask.priority {
-            curtask = Task {
-                action:     Action::Eat,
-                parameters: ActionParameters::default(),
-                priority:   status.hunger,
-            }
-        }
-        commands.entity(entity).insert(curtask);
+        )))
+        .add_system_set(
+            SystemSet::new()
+                .label("status update")
+                .before("ai")
+                .with_system(animal_processes.system())
+                .with_system(unfreeze.system()),
+        )
+        .add_plugin(ai::AIPlugin);
     }
 }
 
-struct Animal; // Component marker for animals (including humans)
+pub struct Inventory {
+    // Every actor should have an inventory component; animals can have an
+    // inventory of size 1.
+    pub contents: Vec<Entity>,
+    pub capacity: usize,
+}
+impl Inventory {
+    fn contains(
+        &self,
+        entity: Entity,
+    ) -> bool {
+        self.contents.contains(&entity)
+    }
+    fn add(
+        &mut self,
+        entity: Entity,
+    ) -> bool {
+        if self.contents.len() < self.capacity {
+            self.contents.push(entity);
+            true
+        } else {
+            false
+        }
+    }
+    fn remove(
+        &mut self,
+        entity: Entity,
+    ) -> Option<Entity> {
+        for index in 0..self.contents.len() {
+            if self.contents[index] == entity {
+                self.contents.remove(index);
+                return Some(entity);
+            }
+        }
+        None
+    }
+    fn is_full(&self) -> bool { self.contents.len() >= self.capacity }
+}
+
+pub struct Intelligent; // Intelligent actor component
+
+pub struct Status {
+    // Used for keeping track of actor state, values are primarily used for
+    // priority of subsequent action
+    pub hunger:   u32,
+    pub laziness: u32, /* Actor will prefer inaction over actions with lower
+                        * priority than laziness */
+    pub thirst:   u32,
+}
+
+pub struct Animal; // Component marker for animals (including humans)
 
 struct AnimalTimer(world::time::GameTime);
 
@@ -118,14 +101,37 @@ fn animal_processes(
     mut timer: ResMut<AnimalTimer>,
 ) {
     if timer.0 <= *game_time {
+        debug!("Timer: {:?}", timer.0);
+        debug!("Game Time {:?}", *game_time);
         for mut status in query.iter_mut() {
             status.hunger += 1;
         }
-        *timer = AnimalTimer(game_time.copy_and_tick_seconds(60));
+        *timer = AnimalTimer(game_time.copy_and_tick(300));
     }
 }
 
-pub struct Orientation(pub Direction);
+pub struct Frozen(u32); // Value represents duration in frames (1/60th second)
+
+struct FrozenTimer(world::time::GameTime);
+
+fn unfreeze(
+    mut commands: Commands,
+    mut frozen_entities: Query<(Entity, &mut Frozen)>,
+    mut timer: ResMut<FrozenTimer>,
+    game_time: Res<world::time::GameTime>,
+) {
+    if timer.0 <= *game_time {
+        for (entity, mut freeze_duration) in frozen_entities.iter_mut() {
+            freeze_duration.0 -= 1;
+            if freeze_duration.0 == 0 {
+                commands.entity(entity).remove::<Frozen>();
+            }
+        }
+    }
+    *timer = FrozenTimer(game_time.copy_and_tick(1));
+}
+
+pub struct Orientation(pub Direction); // TODO: Orientation hasn't really found a home yet.
 
 #[derive(Debug, Copy, Clone, PartialEq, Hash, Eq)]
 pub enum Direction {
@@ -137,78 +143,4 @@ pub enum Direction {
     DownRight, // This is downright.
     Left,
     Right,
-}
-
-mod pathfinding;
-
-pub fn move_actor(
-    mut entity_map: ResMut<world::TileEntityMap>,
-    game_time: Res<world::time::GameTime>,
-    mut commands: Commands,
-    mut query: Query<(
-        Entity,
-        &mut world::time::GameTime,
-        &mut world::Position,
-        &mut Orientation,
-        &world::Destination,
-        &mut pathfinding::Path,
-    )>,
-) {
-    for (
-        entity,
-        mut timer,
-        mut position,
-        mut orientation,
-        destination,
-        mut path,
-    ) in &mut query.iter_mut()
-    {
-        if path.0.is_empty() {
-            commands.entity(entity).remove::<pathfinding::Path>();
-        } else if *timer <= *game_time {
-            let next_step = path.0.remove(0);
-            if path.0.is_empty() {
-                commands.entity(entity).remove::<pathfinding::Path>();
-            }
-            let next_direction = next_step - *position;
-            match next_direction {
-                world::Position { x: 1, .. } => {
-                    *orientation = Orientation(Direction::Up);
-                }
-                world::Position { x: -1, .. } => {
-                    *orientation = Orientation(Direction::Down);
-                }
-                world::Position { y: 1, .. } => {
-                    *orientation = Orientation(Direction::Right);
-                }
-                world::Position { y: -1, .. } => {
-                    *orientation = Orientation(Direction::Left);
-                }
-                _ => (),
-            }
-            // Destructure for convenience
-            let old_x = position.x;
-            let old_y = position.y;
-
-            let new_x = next_step.x;
-            let new_y = next_step.y;
-
-            // Mark previous tile as unoccupied
-            entity_map.set(old_x, old_y, None);
-            // Move the actor
-            *position = next_step;
-            // Mark next tile as occupied
-            entity_map.set(new_x, new_y, Some(entity));
-            // Set time of next action
-            *timer = game_time.copy_and_tick_seconds(1);
-        } else {
-            *timer = game_time.copy_and_tick_seconds(0);
-        }
-        if *destination == *position {
-            commands
-                .entity(entity)
-                .remove::<world::Destination>()
-                .remove::<pathfinding::Path>();
-        }
-    }
 }
