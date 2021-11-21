@@ -30,6 +30,7 @@ const MAX_PATH_LA: usize = 5; // Number of path elements to drop during local av
 
 pub fn local_avoidance(
     // TODO: Call this from walk system instead
+    // TODO: Reduce cognitive complexity
     mut commands: Commands,
     entity_map: Res<TileEntityMap>,
     weight_map: Res<TileWeightMap>,
@@ -97,7 +98,7 @@ pub fn local_avoidance(
                             {
                                 if neighbors.contains(step) {
                                     reattach_indices =
-                                        Some((local_index, global_index))
+                                        Some((local_index, global_index));
                                 }
                             }
                         }

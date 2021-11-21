@@ -29,11 +29,9 @@ pub fn wander_system(
         warn!("Wandering is NON-DETERMINISTIC BEHAVIOR");
         let neighbors =
             neighbors_except_entities(*position, &weight_map, &entity_map);
-        let step = if let Some(step) = neighbors.choose(&mut rng) {
-            step.0
-        } else {
-            *position
-        };
+        let step = neighbors
+            .choose(&mut rng)
+            .map_or_else(|| *position, |step| step.0);
 
         commands.entity(entity).insert(Path(vec![step]));
 
