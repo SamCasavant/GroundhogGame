@@ -11,6 +11,7 @@ pub mod pathfinding;
 
 // Tasks:
 mod eating;
+mod waiting;
 
 // Goals
 pub enum Goals {
@@ -21,7 +22,6 @@ pub enum Goals {
 
 // TODO: Generics!
 pub struct DrinkGoal;
-pub struct WaitGoal;
 
 pub struct Moving;
 pub struct PickingUp;
@@ -38,9 +38,17 @@ impl Plugin for AIPlugin {
         app.add_system_set(
             SystemSet::new()
                 .label("ai")
+                .before("action")
                 .with_system(choose_next_goal.system().label("goal ai"))
                 .with_system(
                     eating::eating_ai
+                        .system()
+                        .label("task ai")
+                        .after("goal ai")
+                        .before("plan ai"),
+                )
+                .with_system(
+                    waiting::wait_ai
                         .system()
                         .label("task ai")
                         .after("goal ai")
@@ -61,10 +69,15 @@ impl Plugin for AIPlugin {
                         .before("action"),
                 ),
         )
-        .add_system(walk_system.system().label("action"))
-        .add_system(eating::eat_system.system().label("action"))
-        .add_system(pick_up_system.system().label("action"))
-        .add_system(eating::find_food_system.system().label("action"));
+        .add_system_set(
+            SystemSet::new()
+                .label("action")
+                .with_system(waiting::wander_system.system())
+                .with_system(walk_system.system())
+                .with_system(eating::eat_system.system())
+                .with_system(pick_up_system.system())
+                .with_system(eating::find_food_system.system()),
+        );
     }
 }
 
@@ -76,7 +89,7 @@ pub fn choose_next_goal(
             With<Intelligent>,
             Without<eating::EatGoal>,
             Without<DrinkGoal>,
-            Without<WaitGoal>,
+            Without<waiting::WaitGoal>,
         ),
     >,
 ) {
@@ -104,6 +117,7 @@ pub fn choose_next_goal(
             }
             Goals::Wait => {
                 debug!("WaitGoal selected.");
+                commands.entity(entity).insert(waiting::WaitGoal);
             } /* {
                * commands.entity(entity).insert(WaitGoal);
                * } */

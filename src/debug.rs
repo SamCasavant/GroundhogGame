@@ -17,7 +17,7 @@ impl Plugin for DebugPlugin {
                 // override config here
                 ..Default::default()
             })
-            .add_plugin(FrameTimeDiagnosticsPlugin)
+            .add_plugin(FrameTimeDiagnosticsPlugin::default())
             .insert_resource(Pause(false))
             .add_system(debug_console.system());
     }

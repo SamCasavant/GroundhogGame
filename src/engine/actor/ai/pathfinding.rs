@@ -12,6 +12,8 @@
 // TODO: For performance, consider limiting the number of pathfinding calls an
 // entity can make per time
 
+use std::i32::MAX;
+
 use bevy::prelude::*;
 use pathfinding::prelude::astar;
 
@@ -22,7 +24,9 @@ use crate::engine::{actor::ai::{Frozen, Moving},
 #[derive(Clone)]
 pub struct Path(pub Vec<Position>);
 
-const PATH_RANGE: u32 = 16; // Range multiplier for finding paths
+// Tunables:
+const PATH_SEARCH_RANGE: u32 = 16; // Range multiplier for finding paths
+const MAX_PATH_LA: usize = 5; // Number of path elements to drop during local avoidance
 
 pub fn local_avoidance(
     // TODO: Call this from walk system instead
@@ -41,6 +45,7 @@ pub fn local_avoidance(
     // paths to that. Failing that, it resets the path- that behavior should
     // change
     for (entity, position, mut path, destination) in query.iter_mut() {
+        trace!("Pre-Local Avoidance Path: {:?}", path.0);
         if !path.0.is_empty()
             && entity_map.get(path.0[0].x, path.0[0].y).is_some()
         // FIXME: Does this cause index error on empty path?
@@ -54,15 +59,14 @@ pub fn local_avoidance(
                     "Destination is inaccessible neighbor, freezing entity."
                 );
                 commands.entity(entity).insert(Frozen(20));
-            } else if entity_map.get(path.0[0].x, path.0[0].y).is_some() {
-                let index = if path.0.len() == 2 {
-                    1
-                } else if path.0.len() == 3 {
-                    2
+            } else {
+                let break_index = if path.0.len() <= MAX_PATH_LA {
+                    path.0.len() - 1
                 } else {
-                    3
+                    MAX_PATH_LA
                 };
-                let local_destination = path.0[index];
+
+                let local_destination = path.0[break_index];
                 let valid_destination = best_nearest_valid_destination(
                     *position,
                     local_destination,
@@ -79,18 +83,40 @@ pub fn local_avoidance(
                         &entity_map,
                     );
 
-                    if let Some(mut p) = local_path {
+                    if let Some(p) = local_path {
+                        // TODO: Reverse p and break when step is found
                         debug!("Local avoidance path found.");
-                        if p.last()
-                            .unwrap()
-                            .neighbors(1)
-                            .contains(&path.0[index])
+                        let mut reattach_indices = None;
+                        for (local_index, step) in
+                            p.as_slice().into_iter().enumerate()
                         {
-                            // TODO: This doesn't cover all cases
-                            debug!("Local avoidance path can be reattached.");
-                            p.extend(path.0[index + 1..].iter().copied());
+                            let neighbors = step.neighbors(1);
+                            for (global_index, step) in
+                                path.0[0..break_index].into_iter().enumerate()
+                            {
+                                if neighbors.contains(step) {
+                                    reattach_indices =
+                                        Some((local_index, global_index))
+                                }
+                            }
                         }
-                        path.0 = p;
+                        if let Some((local_index, global_index)) =
+                            reattach_indices
+                        {
+                            debug!(
+                                "Reattaching to path because {:?} neighbors \
+                                 {:?}",
+                                p[local_index], path.0[global_index]
+                            );
+                            let mut reattach = Vec::new();
+                            reattach.extend_from_slice(&p[0..=local_index]);
+                            reattach.extend_from_slice(
+                                &path.0[global_index..path.0.len()],
+                            );
+                            path.0 = reattach;
+                        } else {
+                            path.0 = p;
+                        }
                     } else {
                         debug!(
                             "No local avoidance path found, freezing entity."
@@ -98,10 +124,11 @@ pub fn local_avoidance(
                         commands.entity(entity).insert(Frozen(20));
                     }
                 }
-            } else {
-                debug!("Next step clear; skipping local avoidance.");
             }
+        } else {
+            debug!("Next step clear; skipping local avoidance.");
         }
+        trace!("Post-Local Avoidance Path: {:?}", path.0);
     }
 }
 
@@ -173,7 +200,8 @@ pub fn get_path(
         |p| {
             *p == destination
                 || p.diagonal_distance(destination)
-                    > PATH_RANGE * position.diagonal_distance(destination)
+                    > PATH_SEARCH_RANGE
+                        * position.diagonal_distance(destination)
         },
     )
     .unwrap_or((vec![position], 0));
@@ -190,7 +218,7 @@ pub fn neighbors_with_weights(
     position: Position,
     weight_map: &Res<TileWeightMap>,
 ) -> Vec<(Position, i64)> {
-    let mut neighbors = Vec::new();
+    let mut neighbors = Vec::with_capacity(8);
     for Position { x, y } in position.side_neighbors() {
         let weight = weight_map.get(x, y);
         if weight < i64::MAX {
@@ -220,7 +248,8 @@ fn get_path_around_entities(
         |p| {
             *p == destination
                 || p.diagonal_distance(destination)
-                    > PATH_RANGE * position.diagonal_distance(destination)
+                    > PATH_SEARCH_RANGE
+                        * position.diagonal_distance(destination)
         },
     )
     .unwrap_or((vec![position], 0));
@@ -233,12 +262,13 @@ fn get_path_around_entities(
     })
 }
 
-fn neighbors_except_entities(
+// TODO: Impl this for position
+pub fn neighbors_except_entities(
     position: Position,
     weight_map: &Res<TileWeightMap>,
     entity_map: &Res<TileEntityMap>,
 ) -> Vec<(Position, i64)> {
-    let mut neighbors = Vec::new();
+    let mut neighbors = Vec::with_capacity(8);
     for Position { x, y } in position.side_neighbors() {
         let weight = weight_map.get(x, y);
         let entity = entity_map.get(x, y);
