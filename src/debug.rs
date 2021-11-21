@@ -1,5 +1,6 @@
 use bevy::diagnostic::FrameTimeDiagnosticsPlugin;
 use bevy::ecs::{archetype::Archetypes, component::Components, entity::Entities};
+use bevy::log::LogPlugin;
 use bevy::prelude::*;
 use bevy_console::{ConsoleCommandEntered, ConsoleConfiguration, ConsolePlugin,
                    PrintConsoleLine};
@@ -18,6 +19,7 @@ impl Plugin for DebugPlugin {
                 ..Default::default()
             })
             .add_plugin(FrameTimeDiagnosticsPlugin::default())
+            .add_plugin(LogPlugin::default())
             .insert_resource(Pause(false))
             .add_system(debug_console.system());
     }

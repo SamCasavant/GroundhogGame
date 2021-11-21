@@ -10,8 +10,6 @@ pub mod ui;
 // When pub people run in pub circles it's a very, very
 pub mod world;
 
-pub use bevy_ecs_tilemap::prelude::*;
-
 pub struct GamePlugins;
 
 impl PluginGroup for GamePlugins {

@@ -89,11 +89,11 @@ pub fn local_avoidance(
                         debug!("Local avoidance path found.");
                         let mut reattach_indices = None;
                         for (local_index, step) in
-                            p.as_slice().into_iter().enumerate()
+                            p.as_slice().iter().enumerate()
                         {
                             let neighbors = step.neighbors(1);
                             for (global_index, step) in
-                                path.0[0..break_index].into_iter().enumerate()
+                                path.0[0..break_index].iter().enumerate()
                             {
                                 if neighbors.contains(step) {
                                     reattach_indices =
