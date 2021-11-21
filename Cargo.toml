@@ -6,12 +6,7 @@ edition = "2021"
 
 [dependencies]
 anyhow = { version = "1.0", optional = true }
-bevy = { version = "0.5.0", features = [
-    "bevy_wgpu",
-    "x11",
-    "png"
-] } # , features = ["dynamic"] }
-bevy_ecs_tilemap = { git = "https://github.com/StarArawn/bevy_ecs_tilemap.git"}
+bevy = { version = "0.5.0" } # , features = ["dynamic"] }
 indexmap = "1.7.0"
 morton-encoding = "2.0"
 pathfinding = "2.0.4"
@@ -26,7 +21,6 @@ bevy_mod_debug_console = { git = "https://github.com/hymm/bevy_mod_debug_console
 pretty_trace = {git = "https://github.com/10XGenomics/rust-toolbox.git"}
 log = "0.4"
 env_logger = "0.9"
-#log4rs = {version = "1.0.0", features = ["file_appender"]}
 
 [profile.release]
 debug = true

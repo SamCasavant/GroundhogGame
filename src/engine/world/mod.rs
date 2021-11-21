@@ -1,15 +1,9 @@
 // Draws the world map and tracks positions
-//
-// Drawing:
-// Uses bevy_ecs_tilemap to draw tiles on screen.
-// Note: Support for bevy_ecs_tilemap/tiled_map to be deprecated in future
-//
 
 use std::cmp::min;
 use std::ops::Sub;
 
 use bevy::prelude::*;
-use bevy_ecs_tilemap::prelude::*;
 use pathfinding::prelude::absdiff;
 
 pub mod item;
@@ -35,10 +29,7 @@ impl Plugin for WorldPlugin {
                 title: String::from("game"),
                 ..Default::default()
             })
-            .add_startup_system(init_tilemaps.system())
-            .add_plugin(time::TimePlugin)
-            .insert_resource(item::HamburgerTimer(Timer::from_seconds(0.2, true)))
-            .add_system(item::spawn_hamburger_every_second.system());
+            .add_plugin(time::TimePlugin);
     }
 }
 
@@ -230,23 +221,4 @@ impl TileEntityMap {
             panic!("Writing entity to tile outside of map: {:?}, {:?}", x, y)
         }
     }
-}
-
-fn init_tilemaps(
-    mut commands: Commands,
-    asset_server: Res<AssetServer>,
-) {
-    commands.spawn_bundle(OrthographicCameraBundle::new_2d());
-
-    let handle: Handle<TiledMap> = asset_server.load("maps/test.tmx");
-
-    let map_entity = commands.spawn().id();
-
-    commands.entity(map_entity).insert_bundle(TiledMapBundle {
-        tiled_map: handle,
-        map: Map::new(0u16, map_entity),
-        transform: Transform::from_xyz(0.0, 0.0, 0.0)
-            .mul_transform(Transform::from_scale(Vec3::splat(4.0))),
-        ..Default::default()
-    });
 }
