@@ -11,7 +11,7 @@ bevy = { version = "0.5.0", features = [
     "x11",
     "png"
 ] } # , features = ["dynamic"] }
-bevy_ecs_tilemap = { git = "https://github.com/StarArawn/bevy_ecs_tilemap.git", features = ["tiled_map"] }
+bevy_ecs_tilemap = { git = "https://github.com/StarArawn/bevy_ecs_tilemap.git"}
 indexmap = "1.7.0"
 morton-encoding = "2.0"
 pathfinding = "2.0.4"

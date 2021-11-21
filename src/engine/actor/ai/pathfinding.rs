@@ -85,6 +85,7 @@ pub fn local_avoidance(
 
                     if let Some(p) = local_path {
                         // TODO: Reverse p and break when step is found
+                        // TODO: Test this code
                         debug!("Local avoidance path found.");
                         let mut reattach_indices = None;
                         for (local_index, step) in
