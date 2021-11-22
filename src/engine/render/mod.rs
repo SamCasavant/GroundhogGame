@@ -17,12 +17,39 @@ impl Plugin for GraphicsPlugin {
     ) {
         debug!("Initializing GraphicsPlugin");
         app.insert_resource(ClearColor(Color::rgb(0.0, 0.0, 0.05)))
-            .add_system(animate_sprite_system.system().label("render"))
-            .add_system(camera_movement::camera_movement.system());
+            .insert_resource(Msaa { samples: 1 })
+            .add_startup_system(setup.system())
+            .add_system(animate_sprite_system.system().label("render"));
+        // .add_system(camera_movement::camera_movement.system());
     }
 }
 
 pub const TILE_WIDTH: f32 = 64.0;
+
+fn setup(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+) {
+    // set up the camera
+    let mut camera = OrthographicCameraBundle::new_3d();
+    camera.orthographic_projection.scale = 3.0;
+    camera.transform =
+        Transform::from_xyz(5.0, 5.0, 5.0).looking_at(Vec3::ZERO, Vec3::Y);
+    commands.spawn_bundle(camera);
+    // Spawn Cube
+    commands.spawn_bundle(PbrBundle {
+        mesh: meshes.add(Mesh::from(shape::Cube { size: 1.0 })),
+        material: materials.add(Color::rgb(0.8, 0.7, 0.6).into()),
+        transform: Transform::from_xyz(1.5, 0.5, 1.5),
+        ..Default::default()
+    });
+    // Spawn Light
+    commands.spawn_bundle(LightBundle {
+        transform: Transform::from_xyz(3.0, 8.0, 5.0),
+        ..Default::default()
+    });
+}
 
 fn animate_sprite_system(
     mut query: Query<(
