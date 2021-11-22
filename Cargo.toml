@@ -6,6 +6,7 @@ edition = "2021"
 
 [dependencies]
 bevy = { version = "0.5.0" } # , features = ["dynamic"] }
+dot_vox = "4.1.0"
 pathfinding = "2.0.4"
 rand = "0.8.4"
 
