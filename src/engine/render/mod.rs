@@ -55,11 +55,11 @@ fn setup(
         light: Light {
             color: Color::rgb(1.0, 1.0, 1.0),
             fov: 360.0,
-            intensity: 9999.0,
-            range: 100.0,
+            intensity: 99999.0,
+            range: 500.0,
             ..Default::default()
         },
-        transform: Transform::from_xyz(10.0, 10.0, 70.0),
+        transform: Transform::from_xyz(0.0, 0.0, 200.0),
         ..Default::default()
     });
 }
@@ -75,6 +75,7 @@ fn load_assets(
     ];
     let object_assets = ["assets/models/objects/pot.vox"];
     let character_assets = ["assets/models/characters/temp.vox"];
+    let mut position = 0; // TODO: Temporary; convert to world::Position when that is updated
     for asset in building_assets {
         // Load .vox file
         let building = dot_vox::load(asset).unwrap();
@@ -96,19 +97,20 @@ fn load_assets(
                     .into(),
                 ),
                 transform: Transform::from_xyz(
-                    -(voxel.x as f32),
+                    -(voxel.x as f32) - position as f32,
                     -(voxel.y as f32),
                     (voxel.z as f32),
                 ),
                 ..Default::default()
             });
         }
+        position += building.models[0].size.x;
     }
     for asset in object_assets {
         // Load .vox file
-        let building = dot_vox::load(asset).unwrap();
-        let vox_palette = &building.palette;
-        for voxel in &building.models[0].voxels {
+        let object = dot_vox::load(asset).unwrap();
+        let vox_palette = &object.palette;
+        for voxel in &object.models[0].voxels {
             let color =
             palette::rgb::Rgb::<palette::encoding::srgb::Srgb, u8>::from_u32::<
                 palette::rgb::channels::Abgr,
@@ -125,19 +127,20 @@ fn load_assets(
                     .into(),
                 ),
                 transform: Transform::from_xyz(
-                    -(voxel.x as f32) / 10.0,
+                    -(voxel.x as f32) / 10.0 - position as f32,
                     -(voxel.y as f32) / 10.0,
                     (voxel.z as f32) / 10.0,
                 ),
                 ..Default::default()
             });
         }
+        position += object.models[0].size.x;
     }
     for asset in character_assets {
         // Load .vox file
-        let building = dot_vox::load(asset).unwrap();
-        let vox_palette = &building.palette;
-        for voxel in &building.models[0].voxels {
+        let character = dot_vox::load(asset).unwrap();
+        let vox_palette = &character.palette;
+        for voxel in &character.models[0].voxels {
             let color =
             palette::rgb::Rgb::<palette::encoding::srgb::Srgb, u8>::from_u32::<
                 palette::rgb::channels::Abgr,
@@ -154,13 +157,14 @@ fn load_assets(
                     .into(),
                 ),
                 transform: Transform::from_xyz(
-                    -(voxel.x as f32) / 10.0,
+                    -(voxel.x as f32) / 10.0 - position as f32,
                     -(voxel.y as f32) / 10.0,
                     (voxel.z as f32) / 10.0,
                 ),
                 ..Default::default()
             });
         }
+        position += character.models[0].size.x;
     }
 }
 
