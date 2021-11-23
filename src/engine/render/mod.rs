@@ -1,5 +1,7 @@
 // This module builds and draws sprites and spawns a camera. Its scope will
 // likely increase
+// Structure and terrain scale: 1 cube = 10in^3
+// Object scale: 1 cube = (1/2)in^3
 
 use bevy::prelude::*;
 use bevy::render::draw::OutsideFrustum;
@@ -20,6 +22,7 @@ impl Plugin for GraphicsPlugin {
         debug!("Initializing GraphicsPlugin");
         app.insert_resource(ClearColor(Color::rgb(0.0, 0.0, 0.05)))
             .insert_resource(Msaa { samples: 1 })
+            .add_startup_system(load_assets.system())
             .add_startup_system(setup.system())
             .add_system(animate_sprite_system.system().label("render"))
             .add_system(camera_movement::pan_orbit_camera.system());
@@ -47,33 +50,6 @@ fn setup(
             ..Default::default()
         });
 
-    // Load .vox file
-    let barnhouse = dot_vox::load("assets/models/barnhouse.vox").unwrap();
-    let vox_palette = &barnhouse.palette;
-    for voxel in &barnhouse.models[0].voxels {
-        let color =
-            palette::rgb::Rgb::<palette::encoding::srgb::Srgb, u8>::from_u32::<
-                palette::rgb::channels::Abgr,
-            >(vox_palette[voxel.i as usize]);
-
-        commands.spawn_bundle(PbrBundle {
-            mesh: meshes.add(Mesh::from(shape::Cube { size: 1.0 })),
-            material: materials.add(
-                Color::rgb(
-                    (color.red as f32 / 255.0),
-                    (color.green as f32 / 255.0),
-                    (color.blue as f32 / 255.0),
-                )
-                .into(),
-            ),
-            transform: Transform::from_xyz(
-                -(voxel.x as f32),
-                -(voxel.y as f32),
-                (voxel.z as f32),
-            ),
-            ..Default::default()
-        });
-    }
     // Spawn Light
     commands.spawn_bundle(LightBundle {
         light: Light {
@@ -86,6 +62,106 @@ fn setup(
         transform: Transform::from_xyz(10.0, 10.0, 70.0),
         ..Default::default()
     });
+}
+
+fn load_assets(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+) {
+    let building_assets = [
+        "assets/models/buildings/barnhouse.vox",
+        "assets/models/buildings/windybean.vox",
+    ];
+    let object_assets = ["assets/models/objects/pot.vox"];
+    let character_assets = ["assets/models/characters/temp.vox"];
+    for asset in building_assets {
+        // Load .vox file
+        let building = dot_vox::load(asset).unwrap();
+        let vox_palette = &building.palette;
+        for voxel in &building.models[0].voxels {
+            let color =
+            palette::rgb::Rgb::<palette::encoding::srgb::Srgb, u8>::from_u32::<
+                palette::rgb::channels::Abgr,
+            >(vox_palette[voxel.i as usize]);
+
+            commands.spawn_bundle(PbrBundle {
+                mesh: meshes.add(Mesh::from(shape::Cube { size: 1.0 })),
+                material: materials.add(
+                    Color::rgb(
+                        (color.red as f32 / 255.0),
+                        (color.green as f32 / 255.0),
+                        (color.blue as f32 / 255.0),
+                    )
+                    .into(),
+                ),
+                transform: Transform::from_xyz(
+                    -(voxel.x as f32),
+                    -(voxel.y as f32),
+                    (voxel.z as f32),
+                ),
+                ..Default::default()
+            });
+        }
+    }
+    for asset in object_assets {
+        // Load .vox file
+        let building = dot_vox::load(asset).unwrap();
+        let vox_palette = &building.palette;
+        for voxel in &building.models[0].voxels {
+            let color =
+            palette::rgb::Rgb::<palette::encoding::srgb::Srgb, u8>::from_u32::<
+                palette::rgb::channels::Abgr,
+            >(vox_palette[voxel.i as usize]);
+
+            commands.spawn_bundle(PbrBundle {
+                mesh: meshes.add(Mesh::from(shape::Cube { size: 0.1 })),
+                material: materials.add(
+                    Color::rgb(
+                        (color.red as f32 / 255.0),
+                        (color.green as f32 / 255.0),
+                        (color.blue as f32 / 255.0),
+                    )
+                    .into(),
+                ),
+                transform: Transform::from_xyz(
+                    -(voxel.x as f32) / 10.0,
+                    -(voxel.y as f32) / 10.0,
+                    (voxel.z as f32) / 10.0,
+                ),
+                ..Default::default()
+            });
+        }
+    }
+    for asset in character_assets {
+        // Load .vox file
+        let building = dot_vox::load(asset).unwrap();
+        let vox_palette = &building.palette;
+        for voxel in &building.models[0].voxels {
+            let color =
+            palette::rgb::Rgb::<palette::encoding::srgb::Srgb, u8>::from_u32::<
+                palette::rgb::channels::Abgr,
+            >(vox_palette[voxel.i as usize]);
+
+            commands.spawn_bundle(PbrBundle {
+                mesh: meshes.add(Mesh::from(shape::Cube { size: 0.1 })),
+                material: materials.add(
+                    Color::rgb(
+                        (color.red as f32 / 255.0),
+                        (color.green as f32 / 255.0),
+                        (color.blue as f32 / 255.0),
+                    )
+                    .into(),
+                ),
+                transform: Transform::from_xyz(
+                    -(voxel.x as f32) / 10.0,
+                    -(voxel.y as f32) / 10.0,
+                    (voxel.z as f32) / 10.0,
+                ),
+                ..Default::default()
+            });
+        }
+    }
 }
 
 fn animate_sprite_system(
