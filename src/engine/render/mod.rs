@@ -3,6 +3,8 @@
 
 use bevy::prelude::*;
 use bevy::render::draw::OutsideFrustum;
+use dot_vox;
+use palette;
 
 use crate::engine::actor;
 use crate::engine::world;
@@ -19,8 +21,8 @@ impl Plugin for GraphicsPlugin {
         app.insert_resource(ClearColor(Color::rgb(0.0, 0.0, 0.05)))
             .insert_resource(Msaa { samples: 1 })
             .add_startup_system(setup.system())
-            .add_system(animate_sprite_system.system().label("render"));
-        // .add_system(camera_movement::camera_movement.system());
+            .add_system(animate_sprite_system.system().label("render"))
+            .add_system(camera_movement::pan_orbit_camera.system());
     }
 }
 
@@ -32,21 +34,56 @@ fn setup(
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
     // set up the camera
-    let mut camera = OrthographicCameraBundle::new_3d();
-    camera.orthographic_projection.scale = 3.0;
-    camera.transform =
-        Transform::from_xyz(5.0, 5.0, 5.0).looking_at(Vec3::ZERO, Vec3::Y);
-    commands.spawn_bundle(camera);
-    // Spawn Cube
-    commands.spawn_bundle(PbrBundle {
-        mesh: meshes.add(Mesh::from(shape::Cube { size: 1.0 })),
-        material: materials.add(Color::rgb(0.8, 0.7, 0.6).into()),
-        transform: Transform::from_xyz(1.5, 0.5, 1.5),
-        ..Default::default()
-    });
+    let translation = Vec3::new(100.0, 100.0, 100.0);
+    let radius = translation.length();
+    commands
+        .spawn_bundle(PerspectiveCameraBundle {
+            transform: Transform::from_translation(translation)
+                .looking_at(Vec3::ZERO, Vec3::Z),
+            ..Default::default()
+        })
+        .insert(camera_movement::PanOrbitCamera {
+            radius,
+            ..Default::default()
+        });
+
+    // Load .vox file
+    let barnhouse = dot_vox::load("assets/models/barnhouse.vox").unwrap();
+    let vox_palette = &barnhouse.palette;
+    for voxel in &barnhouse.models[0].voxels {
+        let color =
+            palette::rgb::Rgb::<palette::encoding::srgb::Srgb, u8>::from_u32::<
+                palette::rgb::channels::Abgr,
+            >(vox_palette[voxel.i as usize]);
+
+        commands.spawn_bundle(PbrBundle {
+            mesh: meshes.add(Mesh::from(shape::Cube { size: 1.0 })),
+            material: materials.add(
+                Color::rgb(
+                    (color.red as f32 / 255.0),
+                    (color.green as f32 / 255.0),
+                    (color.blue as f32 / 255.0),
+                )
+                .into(),
+            ),
+            transform: Transform::from_xyz(
+                -(voxel.x as f32),
+                -(voxel.y as f32),
+                (voxel.z as f32),
+            ),
+            ..Default::default()
+        });
+    }
     // Spawn Light
     commands.spawn_bundle(LightBundle {
-        transform: Transform::from_xyz(3.0, 8.0, 5.0),
+        light: Light {
+            color: Color::rgb(1.0, 1.0, 1.0),
+            fov: 360.0,
+            intensity: 9999.0,
+            range: 100.0,
+            ..Default::default()
+        },
+        transform: Transform::from_xyz(10.0, 10.0, 70.0),
         ..Default::default()
     });
 }
