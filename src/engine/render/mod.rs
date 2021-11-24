@@ -25,7 +25,8 @@ impl Plugin for GraphicsPlugin {
             .add_startup_system(load_assets.system())
             .add_startup_system(setup.system())
             .add_system(animate_sprite_system.system().label("render"))
-            .add_system(camera_movement::pan_orbit_camera.system());
+            .add_system(camera_movement::pan_orbit_camera.system())
+            .add_system(draw_world_voxels.system());
     }
 }
 
@@ -51,15 +52,40 @@ fn setup(
             ..Default::default()
         });
     // Draw a ground plane TODO: Add a terrain
-    commands.spawn_bundle(PbrBundle {
-        mesh: meshes.add(Mesh::from(shape::Plane { size: 1000.0 })),
-        material: materials.add(Color::rgb(0.1, 0.7, 0.2).into()),
-        transform: Transform::from_translation(Vec3::new(0.0, 0.0, 0.0)),
-        ..Default::default()
-    });
+    for x in 0..10 {
+        for y in 0..1000 {
+            commands
+                .spawn()
+                .insert(Voxel {
+                    x,
+                    y,
+                    z: 0,
+                    material: Color::rgb(0.2, 0.2, 0.2),
+                })
+                .insert(Visible);
+            commands
+                .spawn()
+                .insert(Voxel {
+                    x,
+                    y,
+                    z: 1,
+                    material: Color::rgb(0.2, 0.15, 0.1),
+                })
+                .insert(Visible);
+            commands
+                .spawn()
+                .insert(Voxel {
+                    x,
+                    y,
+                    z: 2,
+                    material: Color::rgb(0.1, 0.9, 0.3),
+                })
+                .insert(Visible);
+        }
+    }
     // Ambient light
     ambient_light.color = Color::WHITE;
-    ambient_light.brightness = 0.1;
+    ambient_light.brightness = 0.05;
     // Sunlight
     commands.spawn_bundle(LightBundle {
         light: Light {
@@ -73,6 +99,8 @@ fn setup(
         ..Default::default()
     });
 }
+
+pub struct Visible;
 
 pub struct Voxel {
     // Voxels belonging to the main world
@@ -185,7 +213,7 @@ fn load_assets(mut commands: Commands) {
 
 fn draw_world_voxels(
     mut commands: Commands,
-    query: Query<(Entity, &Voxel), With<Visible>>,
+    query: Query<(Entity, &Voxel), (With<Visible>, Without<Mesh>)>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
