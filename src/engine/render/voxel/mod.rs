@@ -22,6 +22,14 @@ impl Plugin for VoxelPlugin {
         app.insert_resource(State::new(AppState::Loading))
             .add_state(AppState::Loading)
             .add_system_set(
+                SystemSet::on_enter(AppState::Loading)
+                    .with_system(load_textures.system()),
+            )
+            .add_system_set(
+                SystemSet::on_update(AppState::Loading)
+                    .with_system(check_loaded.system()),
+            )
+            .add_system_set(
                 SystemSet::on_enter(AppState::Run)
                     .with_system(load_assets.system()),
             );
@@ -30,21 +38,19 @@ impl Plugin for VoxelPlugin {
 
 pub fn load_assets(
     mut commands: Commands,
+    texture_handle: Res<LoadingTexture>,
+    mut textures: ResMut<Assets<Texture>>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
-    mut textures: ResMut<Assets<Texture>>,
     mut pipelines: ResMut<Assets<PipelineDescriptor>>,
     mut shaders: ResMut<Assets<Shader>>,
 ) {
-    let mut voxel_count = 0;
     // Draw terrain
     let extent =
         Extent3i::from_min_and_shape(PointN([0; 3]), PointN([1000, 100, 1000]));
     let mut voxels = Array3x1::fill(extent, Voxel::default());
-    let rock_level = Extent3i::from_min_and_shape(
-        PointN([0, 0, 0]),
-        PointN([1000, 1, 1000]),
-    );
+    let rock_level =
+        Extent3i::from_min_and_shape(PointN([0, 0, 0]), PointN([10, 10, 10]));
     voxels.fill_extent(&rock_level, Voxel(1));
 
     let building_assets = [
@@ -55,7 +61,15 @@ pub fn load_assets(
     let character_assets = ["assets/models/characters/temp.vox"];
     let mut position = world::Position { x: 0, y: 0, z: 1 };
 
-    // Copy-paste TODO
+    // TODO: The rest of this file has been copy-pasted
+    let mut texture = textures.get_mut(&texture_handle.0).unwrap();
+    texture.sampler = SamplerDescriptor {
+        address_mode_u: AddressMode::Repeat,
+        address_mode_v: AddressMode::Repeat,
+        ..Default::default()
+    };
+
+    texture.reinterpret_stacked_2d_as_array(TEXTURE_LAYERS);
     let mut greedy_buffer =
         GreedyQuadsBuffer::new(extent, RIGHT_HANDED_Y_UP_CONFIG.quad_groups());
     greedy_quads(&voxels, &extent, &mut greedy_buffer);
@@ -98,132 +112,41 @@ pub fn load_assets(
                 FRAGMENT_SHADER,
             ))),
         }));
-    // End copy-paste
-    println!(
-        "{:?}",
-        commands
-            .spawn_bundle(PbrBundle {
-                mesh: meshes.add(render_mesh),
-                render_pipelines: RenderPipelines::from_pipelines(vec![
-                    RenderPipeline::new(pipeline),
-                ]),
-                material: materials.add(Color::rgb(0.2, 0.2, 0.2).into()),
-                ..Default::default()
-            })
-            .id()
-    );
-
-    // TODO: Temporary; convert to world::Position when that is updated
-    // for _ in 0..1000 {
-    //     // Fixme: This^ is just for benchmarking
-    //     for asset in building_assets {
-    //         // Load .vox file
-    //         let building = dot_vox::load(asset).unwrap();
-    //         let vox_palette = &building.palette;
-    //         for voxel in &building.models[0].voxels {
-    //             let color_u32 = palette::rgb::Rgb::<
-    //                 palette::encoding::srgb::Srgb,
-    //                 u8,
-    //             >::from_u32::<palette::rgb::channels::Abgr>(
-    //                 vox_palette[voxel.i as usize],
-    //             );
-    //             let color = Color::rgb(
-    //                 color_u32.red as f32 / 255.0,
-    //                 color_u32.green as f32 / 255.0,
-    //                 color_u32.blue as f32 / 255.0,
-    //             );
-    //             commands.spawn().insert(Voxel {
-    //                 x:        (voxel.x as u32) + position.x as u32,
-    //                 y:        voxel.z as u32,
-    //                 z:        voxel.y as u32,
-    //                 material: color,
-    //             });
-    //         }
-    //         position.x += building.models[0].size.x;
-    //     }
-    //     for asset in object_assets {
-    //         // Load .vox file
-    //         let object = dot_vox::load(asset).unwrap();
-    //         let vox_palette = &object.palette;
-    //         for voxel in &object.models[0].voxels {
-    //             let color_u32 = palette::rgb::Rgb::<
-    //                 palette::encoding::srgb::Srgb,
-    //                 u8,
-    //             >::from_u32::<palette::rgb::channels::Abgr>(
-    //                 vox_palette[voxel.i as usize],
-    //             );
-    //             let color = Color::rgb(
-    //                 color_u32.red as f32 / 255.0,
-    //                 color_u32.green as f32 / 255.0,
-    //                 color_u32.blue as f32 / 255.0,
-    //             );
-    //             commands.spawn().insert(ObjectVoxel {
-    //                 x:        0.0,
-    //                 y:        0.0,
-    //                 z:        0.0,
-    //                 material: color,
-    //             });
-    //             voxel_count += 1;
-    //         }
-    //         position.x += object.models[0].size.x.saturating_div(10);
-    //     }
-    //     for asset in character_assets {
-    //         // Load .vox file
-    //         let character = dot_vox::load(asset).unwrap();
-    //         let vox_palette = &character.palette;
-    //         for voxel in &character.models[0].voxels {
-    //             let color_u32 = palette::rgb::Rgb::<
-    //                 palette::encoding::srgb::Srgb,
-    //                 u8,
-    //             >::from_u32::<palette::rgb::channels::Abgr>(
-    //                 vox_palette[voxel.i as usize],
-    //             );
-    //             let color = Color::rgb(
-    //                 color_u32.red as f32 / 255.0,
-    //                 color_u32.green as f32 / 255.0,
-    //                 color_u32.blue as f32 / 255.0,
-    //             );
-    //             commands.spawn().insert(ObjectVoxel {
-    //                 x:        0.0,
-    //                 y:        0.0,
-    //                 z:        0.0,
-    //                 material: color,
-    //             });
-    //             voxel_count += 1;
-    //         }
-    //         position.x += character.models[0].size.x.saturating_div(10);
-    //     }
-    //}
-    println!("Voxels: {:?}", voxel_count);
+    commands.spawn_bundle(PbrBundle {
+        mesh: meshes.add(render_mesh),
+        render_pipelines: RenderPipelines::from_pipelines(vec![
+            RenderPipeline::new(pipeline),
+        ]),
+        material: materials.add(texture_handle.0.clone().into()),
+        ..Default::default()
+    });
 }
-
-// pub fn draw_world_voxels(
-//     mut commands: Commands,
-//     query: Query<(Entity, &Voxel), (With<Visible>, Without<Mesh>)>,
-//     mut meshes: ResMut<Assets<Mesh>>,
-//     mut materials: ResMut<Assets<StandardMaterial>>,
-// ) {
-//     for (entity, voxel) in query.iter() {
-//         commands.entity(entity).insert_bundle(PbrBundle {
-//             mesh: meshes.add(Mesh::from(shape::Cube { size: 1.0 })),
-//             material: materials.add(voxel.material.into()),
-//             transform: Transform::from_xyz(
-//                 voxel.x as f32,
-//                 voxel.y as f32,
-//                 voxel.z as f32,
-//             ),
-//             ..Default::default()
-//         });
-//     }
-// }
-
-// TODO: copy-paste
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 enum AppState {
     Loading,
     Run,
 }
-pub struct Loading(Handle<Texture>);
+pub struct LoadingTexture(Handle<Texture>);
+
+fn load_textures(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+) {
+    let handle = asset_server.load("materials.png");
+    commands.insert_resource(LoadingTexture(handle));
+}
+
+/// Make sure that our texture is loaded so we can change some settings on it
+/// later
+fn check_loaded(
+    mut state: ResMut<State<AppState>>,
+    handle: Res<LoadingTexture>,
+    asset_server: Res<AssetServer>,
+) {
+    if let LoadState::Loaded = asset_server.get_load_state(&handle.0) {
+        state.set(AppState::Run).unwrap();
+    }
+}
 const TEXTURE_LAYERS: u32 = 4;
 const UV_SCALE: f32 = 0.1;
 /// Default bevy vertex shader with added vertex attribute for texture layer
@@ -353,17 +276,5 @@ impl MeshBuf {
         self.layer.extend_from_slice(&[layer; 4]);
         self.indices
             .extend_from_slice(&face.quad_mesh_indices(start_index));
-    }
-}
-
-/// Make sure that our texture is loaded so we can change some settings on it
-/// later
-fn check_loaded(
-    mut state: ResMut<State<AppState>>,
-    handle: Res<Loading>,
-    asset_server: Res<AssetServer>,
-) {
-    if let LoadState::Loaded = asset_server.get_load_state(&handle.0) {
-        state.set(AppState::Run).unwrap();
     }
 }

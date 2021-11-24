@@ -21,9 +21,9 @@ impl Plugin for GraphicsPlugin {
         app: &mut AppBuilder,
     ) {
         debug!("Initializing GraphicsPlugin");
-        app.insert_resource(ClearColor(Color::rgb(0.0, 0.0, 0.05)))
+        app.add_plugin(voxel::VoxelPlugin)
+            .insert_resource(ClearColor(Color::rgb(0.0, 0.0, 0.05)))
             .insert_resource(Msaa { samples: 1 })
-            .add_startup_system(voxel::load_assets.system())
             .add_startup_system(setup.system())
             .add_system(animate_sprite_system.system().label("render"))
             .add_system(camera_movement::pan_orbit_camera.system());
@@ -39,12 +39,12 @@ fn setup(
     mut ambient_light: ResMut<bevy::pbr::AmbientLight>,
 ) {
     // set up the camera
-    let translation = Vec3::new(100.0, 100.0, 100.0);
+    let translation = Vec3::new(0.0, 100.0, 100.0);
     let radius = translation.length();
     commands
         .spawn_bundle(PerspectiveCameraBundle {
             transform: Transform::from_translation(translation)
-                .looking_at(Vec3::ZERO, Vec3::Z),
+                .looking_at(Vec3::ZERO, Vec3::Y),
             ..Default::default()
         })
         .insert(camera_movement::PanOrbitCamera {
@@ -54,7 +54,7 @@ fn setup(
 
     // Ambient light
     ambient_light.color = Color::WHITE;
-    ambient_light.brightness = 0.05;
+    ambient_light.brightness = 1.0;
     // Sunlight
     commands.spawn_bundle(LightBundle {
         light: Light {
