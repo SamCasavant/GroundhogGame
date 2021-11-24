@@ -221,16 +221,16 @@ pub fn neighbors_with_weights(
     weight_map: &Res<TileWeightMap>,
 ) -> Vec<(Position, i64)> {
     let mut neighbors = Vec::with_capacity(8);
-    for Position { x, y } in position.side_neighbors() {
+    for Position { x, y, z } in position.side_neighbors() {
         let weight = weight_map.get(x, y);
         if weight < i64::MAX {
-            neighbors.push((Position { x, y }, weight));
+            neighbors.push((Position { x, y, z }, weight));
         }
     }
-    for Position { x, y } in position.corner_neighbors() {
+    for Position { x, y, z } in position.corner_neighbors() {
         let weight = ((weight_map.get(x, y) as f64) * 2f64.sqrt()) as i64;
         if weight < i64::MAX {
-            neighbors.push((Position { x, y }, weight));
+            neighbors.push((Position { x, y, z }, weight));
         }
     }
     neighbors
@@ -271,19 +271,19 @@ pub fn neighbors_except_entities(
     entity_map: &Res<TileEntityMap>,
 ) -> Vec<(Position, i64)> {
     let mut neighbors = Vec::with_capacity(8);
-    for Position { x, y } in position.side_neighbors() {
+    for Position { x, y, z } in position.side_neighbors() {
         let weight = weight_map.get(x, y);
         let entity = entity_map.get(x, y);
         if entity.is_none() && weight < i64::MAX {
-            neighbors.push((Position { x, y }, weight));
+            neighbors.push((Position { x, y, z }, weight));
         }
     }
-    for Position { x, y } in position.corner_neighbors() {
+    for Position { x, y, z } in position.corner_neighbors() {
         let weight = weight_map.get(x, y);
         let distance_adjusted_weight = ((weight as f64) * 2f64.sqrt()) as i64;
         let entity = entity_map.get(x, y);
         if entity.is_none() && distance_adjusted_weight < i64::MAX {
-            neighbors.push((Position { x, y }, distance_adjusted_weight));
+            neighbors.push((Position { x, y, z }, distance_adjusted_weight));
         }
     }
     neighbors

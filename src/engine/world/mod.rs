@@ -42,6 +42,7 @@ pub struct RelativePosition {
 pub struct Position {
     pub x: u32,
     pub y: u32,
+    pub z: u32,
 }
 impl Position {
     pub fn neighbors(
@@ -56,7 +57,7 @@ impl Position {
         let y_max = self.y.saturating_add(radius);
         for x in x_min..=x_max {
             for y in y_min..=y_max {
-                let position = Self { x, y };
+                let position = Self { x, y, z: 0 };
                 if !(self == position) {
                     neighbors.push(position);
                 }
@@ -71,7 +72,7 @@ impl Position {
             let try_y = (self.y + step_y).checked_sub(1);
             if let Some(x) = try_x {
                 if let Some(y) = try_y {
-                    neighbors.push(Self { x, y });
+                    neighbors.push(Self { x, y, z: 0 });
                 }
             }
         }
@@ -84,7 +85,7 @@ impl Position {
             let try_y = (self.y + step_y).checked_sub(1);
             if let Some(x) = try_x {
                 if let Some(y) = try_y {
-                    neighbors.push(Self { x, y });
+                    neighbors.push(Self { x, y, z: 0 });
                 }
             }
         }

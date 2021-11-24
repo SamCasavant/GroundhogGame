@@ -35,6 +35,7 @@ fn setup(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
+    mut ambient_light: ResMut<bevy::pbr::AmbientLight>,
 ) {
     // set up the camera
     let translation = Vec3::new(100.0, 100.0, 100.0);
@@ -49,11 +50,20 @@ fn setup(
             radius,
             ..Default::default()
         });
-
-    // Spawn Light
+    // Draw a ground plane TODO: Add a terrain
+    commands.spawn_bundle(PbrBundle {
+        mesh: meshes.add(Mesh::from(shape::Plane { size: 1000.0 })),
+        material: materials.add(Color::rgb(0.1, 0.7, 0.2).into()),
+        transform: Transform::from_translation(Vec3::new(0.0, 0.0, 0.0)),
+        ..Default::default()
+    });
+    // Ambient light
+    ambient_light.color = Color::WHITE;
+    ambient_light.brightness = 0.1;
+    // Sunlight
     commands.spawn_bundle(LightBundle {
         light: Light {
-            color: Color::rgb(1.0, 1.0, 1.0),
+            color: Color::rgb(0.95, 0.8, 0.05),
             fov: 360.0,
             intensity: 99999.0,
             range: 500.0,
@@ -75,7 +85,7 @@ fn load_assets(
     ];
     let object_assets = ["assets/models/objects/pot.vox"];
     let character_assets = ["assets/models/characters/temp.vox"];
-    let mut position = 0; // TODO: Temporary; convert to world::Position when that is updated
+    let mut position = world::Position { x: 0, y: 0, z: 1 }; // TODO: Temporary; convert to world::Position when that is updated
     for asset in building_assets {
         // Load .vox file
         let building = dot_vox::load(asset).unwrap();
@@ -97,14 +107,14 @@ fn load_assets(
                     .into(),
                 ),
                 transform: Transform::from_xyz(
-                    -(voxel.x as f32) - position as f32,
-                    -(voxel.y as f32),
+                    (voxel.x as f32) + position.x as f32,
                     (voxel.z as f32),
+                    (voxel.y as f32),
                 ),
                 ..Default::default()
             });
         }
-        position += building.models[0].size.x;
+        position.x += building.models[0].size.x;
     }
     for asset in object_assets {
         // Load .vox file
@@ -127,14 +137,14 @@ fn load_assets(
                     .into(),
                 ),
                 transform: Transform::from_xyz(
-                    -(voxel.x as f32) / 10.0 - position as f32,
-                    -(voxel.y as f32) / 10.0,
+                    (voxel.x as f32) / 10.0 + position.x as f32,
                     (voxel.z as f32) / 10.0,
+                    (voxel.y as f32) / 10.0,
                 ),
                 ..Default::default()
             });
         }
-        position += object.models[0].size.x;
+        position.x += object.models[0].size.x.saturating_div(10);
     }
     for asset in character_assets {
         // Load .vox file
@@ -157,14 +167,14 @@ fn load_assets(
                     .into(),
                 ),
                 transform: Transform::from_xyz(
-                    -(voxel.x as f32) / 10.0 - position as f32,
-                    -(voxel.y as f32) / 10.0,
+                    (voxel.x as f32) / 10.0 + position.x as f32,
                     (voxel.z as f32) / 10.0,
+                    (voxel.y as f32) / 10.0,
                 ),
                 ..Default::default()
             });
         }
-        position += character.models[0].size.x;
+        position.x += character.models[0].size.x.saturating_div(10);
     }
 }
 

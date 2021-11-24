@@ -31,6 +31,7 @@ fn add_people(
         let position = engine::world::Position {
             x: rng.gen_range(x_range),
             y: rng.gen_range(y_range),
+            z: 0,
         };
         let destination = engine::world::Destination(position);
         let inventory = engine::actor::Inventory {
