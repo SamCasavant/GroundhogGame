@@ -74,11 +74,25 @@ fn setup(
     });
 }
 
-fn load_assets(
-    mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
-) {
+pub struct Voxel {
+    // Voxels belonging to the main world
+    x:        u32,
+    y:        u32,
+    z:        u32,
+    material: Color,
+}
+
+pub struct ObjectVoxel {
+    // Voxels belonging to entities, coordinates; position relative to base
+    // Voxel
+    x:        f32,
+    y:        f32,
+    z:        f32,
+    material: Color,
+}
+
+fn load_assets(mut commands: Commands) {
+    let mut voxel_count = 0;
     let building_assets = [
         "assets/models/buildings/barnhouse.vox",
         "assets/models/buildings/windybean.vox",
@@ -86,95 +100,106 @@ fn load_assets(
     let object_assets = ["assets/models/objects/pot.vox"];
     let character_assets = ["assets/models/characters/temp.vox"];
     let mut position = world::Position { x: 0, y: 0, z: 1 }; // TODO: Temporary; convert to world::Position when that is updated
-    for asset in building_assets {
-        // Load .vox file
-        let building = dot_vox::load(asset).unwrap();
-        let vox_palette = &building.palette;
-        for voxel in &building.models[0].voxels {
-            let color =
-            palette::rgb::Rgb::<palette::encoding::srgb::Srgb, u8>::from_u32::<
-                palette::rgb::channels::Abgr,
-            >(vox_palette[voxel.i as usize]);
-
-            commands.spawn_bundle(PbrBundle {
-                mesh: meshes.add(Mesh::from(shape::Cube { size: 1.0 })),
-                material: materials.add(
-                    Color::rgb(
-                        (color.red as f32 / 255.0),
-                        (color.green as f32 / 255.0),
-                        (color.blue as f32 / 255.0),
-                    )
-                    .into(),
-                ),
-                transform: Transform::from_xyz(
-                    (voxel.x as f32) + position.x as f32,
-                    (voxel.z as f32),
-                    (voxel.y as f32),
-                ),
-                ..Default::default()
-            });
+    for _ in 0..1000 {
+        // Fixme: This^ is just for benchmarking
+        for asset in building_assets {
+            // Load .vox file
+            let building = dot_vox::load(asset).unwrap();
+            let vox_palette = &building.palette;
+            for voxel in &building.models[0].voxels {
+                let color_u32 = palette::rgb::Rgb::<
+                    palette::encoding::srgb::Srgb,
+                    u8,
+                >::from_u32::<palette::rgb::channels::Abgr>(
+                    vox_palette[voxel.i as usize],
+                );
+                let color = Color::rgb(
+                    color_u32.red as f32 / 255.0,
+                    color_u32.green as f32 / 255.0,
+                    color_u32.blue as f32 / 255.0,
+                );
+                commands.spawn().insert(Voxel {
+                    x:        (voxel.x as u32) + position.x as u32,
+                    y:        voxel.z as u32,
+                    z:        voxel.y as u32,
+                    material: color,
+                });
+            }
+            position.x += building.models[0].size.x;
         }
-        position.x += building.models[0].size.x;
+        for asset in object_assets {
+            // Load .vox file
+            let object = dot_vox::load(asset).unwrap();
+            let vox_palette = &object.palette;
+            for voxel in &object.models[0].voxels {
+                let color_u32 = palette::rgb::Rgb::<
+                    palette::encoding::srgb::Srgb,
+                    u8,
+                >::from_u32::<palette::rgb::channels::Abgr>(
+                    vox_palette[voxel.i as usize],
+                );
+                let color = Color::rgb(
+                    color_u32.red as f32 / 255.0,
+                    color_u32.green as f32 / 255.0,
+                    color_u32.blue as f32 / 255.0,
+                );
+                commands.spawn().insert(ObjectVoxel {
+                    x:        0.0,
+                    y:        0.0,
+                    z:        0.0,
+                    material: color,
+                });
+                voxel_count += 1;
+            }
+            position.x += object.models[0].size.x.saturating_div(10);
+        }
+        for asset in character_assets {
+            // Load .vox file
+            let character = dot_vox::load(asset).unwrap();
+            let vox_palette = &character.palette;
+            for voxel in &character.models[0].voxels {
+                let color_u32 = palette::rgb::Rgb::<
+                    palette::encoding::srgb::Srgb,
+                    u8,
+                >::from_u32::<palette::rgb::channels::Abgr>(
+                    vox_palette[voxel.i as usize],
+                );
+                let color = Color::rgb(
+                    color_u32.red as f32 / 255.0,
+                    color_u32.green as f32 / 255.0,
+                    color_u32.blue as f32 / 255.0,
+                );
+                commands.spawn().insert(ObjectVoxel {
+                    x:        0.0,
+                    y:        0.0,
+                    z:        0.0,
+                    material: color,
+                });
+                voxel_count += 1;
+            }
+            position.x += character.models[0].size.x.saturating_div(10);
+        }
     }
-    for asset in object_assets {
-        // Load .vox file
-        let object = dot_vox::load(asset).unwrap();
-        let vox_palette = &object.palette;
-        for voxel in &object.models[0].voxels {
-            let color =
-            palette::rgb::Rgb::<palette::encoding::srgb::Srgb, u8>::from_u32::<
-                palette::rgb::channels::Abgr,
-            >(vox_palette[voxel.i as usize]);
+    println!("Voxels: {:?}", voxel_count);
+}
 
-            commands.spawn_bundle(PbrBundle {
-                mesh: meshes.add(Mesh::from(shape::Cube { size: 0.1 })),
-                material: materials.add(
-                    Color::rgb(
-                        (color.red as f32 / 255.0),
-                        (color.green as f32 / 255.0),
-                        (color.blue as f32 / 255.0),
-                    )
-                    .into(),
-                ),
-                transform: Transform::from_xyz(
-                    (voxel.x as f32) / 10.0 + position.x as f32,
-                    (voxel.z as f32) / 10.0,
-                    (voxel.y as f32) / 10.0,
-                ),
-                ..Default::default()
-            });
-        }
-        position.x += object.models[0].size.x.saturating_div(10);
-    }
-    for asset in character_assets {
-        // Load .vox file
-        let character = dot_vox::load(asset).unwrap();
-        let vox_palette = &character.palette;
-        for voxel in &character.models[0].voxels {
-            let color =
-            palette::rgb::Rgb::<palette::encoding::srgb::Srgb, u8>::from_u32::<
-                palette::rgb::channels::Abgr,
-            >(vox_palette[voxel.i as usize]);
-
-            commands.spawn_bundle(PbrBundle {
-                mesh: meshes.add(Mesh::from(shape::Cube { size: 0.1 })),
-                material: materials.add(
-                    Color::rgb(
-                        (color.red as f32 / 255.0),
-                        (color.green as f32 / 255.0),
-                        (color.blue as f32 / 255.0),
-                    )
-                    .into(),
-                ),
-                transform: Transform::from_xyz(
-                    (voxel.x as f32) / 10.0 + position.x as f32,
-                    (voxel.z as f32) / 10.0,
-                    (voxel.y as f32) / 10.0,
-                ),
-                ..Default::default()
-            });
-        }
-        position.x += character.models[0].size.x.saturating_div(10);
+fn draw_world_voxels(
+    mut commands: Commands,
+    query: Query<(Entity, &Voxel), With<Visible>>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+) {
+    for (entity, voxel) in query.iter() {
+        commands.entity(entity).insert_bundle(PbrBundle {
+            mesh: meshes.add(Mesh::from(shape::Cube { size: 1.0 })),
+            material: materials.add(voxel.material.into()),
+            transform: Transform::from_xyz(
+                voxel.x as f32,
+                voxel.y as f32,
+                voxel.z as f32,
+            ),
+            ..Default::default()
+        });
     }
 }
 
