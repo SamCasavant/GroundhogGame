@@ -1,7 +1,6 @@
 use std::ops::RangeInclusive;
 
 use bevy::prelude::*;
-use bevy_asset_loader::{AssetCollection, AssetLoader};
 use pretty_trace::PrettyTrace;
 use rand::Rng;
 

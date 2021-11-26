@@ -25,10 +25,10 @@ pub fn build(
 ) {
     // Draw terrain
     let extent =
-        Extent3i::from_min_and_shape(PointN([0; 3]), PointN([1000, 100, 1000]));
+        Extent3i::from_min_and_max(PointN([0; 3]), PointN([1000, 100, 1000]));
     let mut voxels = Array3x1::fill(extent, Voxel::default());
     let rock_level =
-        Extent3i::from_min_and_shape(PointN([0, 0, 0]), PointN([10, 10, 10]));
+        Extent3i::from_min_and_max(PointN([0, 0, 0]), PointN([100, 1, 100]));
     voxels.fill_extent(&rock_level, Voxel(1));
 
     // Load buildings TODO: Move these to asset_collections
@@ -38,6 +38,7 @@ pub fn build(
     >("assets/models/buildings/barnhouse.vox", 0)
     .expect("reading file failed")
     .expect("file not found");
+    // let barnhouse_extent = Extent3i::from
 
     // let mut position = world::Position { x: 0, y: 0, z: 1 };
     let mut texture = textures.get_mut(&texture_handle.block_textures).unwrap();
