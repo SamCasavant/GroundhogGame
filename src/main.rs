@@ -1,20 +1,42 @@
 use std::ops::RangeInclusive;
 
 use bevy::prelude::*;
+use bevy_asset_loader::{AssetCollection, AssetLoader};
 use pretty_trace::PrettyTrace;
 use rand::Rng;
+
+use crate::engine::asset_collections::*;
 mod debug;
 mod engine;
 
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+enum AppState {
+    LoadingAssets,
+    BuildingWorld,
+    InGame,
+}
 fn main() {
     env_logger::init();
     PrettyTrace::new().on();
-    App::build()
-        .add_plugins(DefaultPlugins)
+    let mut app = App::build();
+    AssetLoader::new(AppState::LoadingAssets, AppState::BuildingWorld)
+        .with_collection::<TextureAssets>()
+        .build(&mut app);
+    app.add_plugins(DefaultPlugins)
+        .add_state(AppState::LoadingAssets)
+        .add_system_set(
+            SystemSet::on_enter(AppState::BuildingWorld)
+                .with_system(print_loading_complete.system())
+                .with_system(engine::render::voxel::build.system()),
+        )
         .add_plugins(engine::GamePlugins)
         .add_plugin(debug::DebugPlugin)
         .add_startup_system(add_people.system())
         .run();
+}
+
+fn print_loading_complete() {
+    println!("Loading complete...?");
 }
 
 fn add_people(

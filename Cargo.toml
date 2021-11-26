@@ -10,12 +10,12 @@ pathfinding = "2.0.4"
 rand = "0.8.4"
 
 ## Voxel Dependencies
-dot_vox = "4.1.0"
-palette = "0.6.0"
-building-blocks = "0.7.1"
+building-blocks = {version = "0.7.1", features=["vox-format"]}
+bevy_asset_loader = "0.6.0"
 
 ## Debugging Dependencies:
 bevy_mod_debug_console = "0.0.2"
+bevy_mod_debugdump = "0.2"
 pretty_trace = {git = "https://github.com/10XGenomics/rust-toolbox.git"}
 log = "0.4"
 env_logger = "0.9"

@@ -5,6 +5,7 @@
 use bevy::app::PluginGroupBuilder;
 use bevy::prelude::*;
 pub mod actor;
+pub mod asset_collections;
 pub mod render;
 pub mod ui;
 // When pub people run in pub circles it's a very, very

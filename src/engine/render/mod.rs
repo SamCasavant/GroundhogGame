@@ -5,13 +5,11 @@
 
 use bevy::prelude::*;
 use bevy::render::draw::OutsideFrustum;
-use dot_vox;
-use palette;
 
 use crate::engine::actor;
 use crate::engine::world;
 mod camera_movement;
-mod voxel;
+pub mod voxel;
 
 pub struct GraphicsPlugin;
 
