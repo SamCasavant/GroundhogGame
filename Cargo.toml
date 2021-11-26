@@ -10,8 +10,9 @@ pathfinding = "2.0.4"
 rand = "0.8.4"
 
 ## Voxel Dependencies
-building-blocks = {version = "0.7.1", features=["vox-format"]}
+building-blocks = { git = "https://github.com/bonsairobo/building-blocks.git", features = ["vox-format"]} 
 bevy_asset_loader = "0.6.0"
+vox-format = "*"
 
 ## Debugging Dependencies:
 bevy_mod_debug_console = "0.0.2"

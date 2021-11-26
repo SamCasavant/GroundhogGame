@@ -5,12 +5,20 @@
 use bevy::app::PluginGroupBuilder;
 use bevy::prelude::*;
 pub mod actor;
-pub mod asset_collections;
+pub mod asset;
 pub mod render;
 pub mod ui;
 // When pub people run in pub circles it's a very, very
 pub mod world;
 
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum AppState {
+    Splash,
+    MainMenu,
+    LoadingAssets,
+    BuildingWorld,
+    InGame,
+}
 pub struct GamePlugins;
 
 impl PluginGroup for GamePlugins {
@@ -19,6 +27,7 @@ impl PluginGroup for GamePlugins {
         group: &mut PluginGroupBuilder,
     ) {
         group
+            .add(asset::AssetPlugin)
             .add(ui::UIPlugin)
             .add(render::GraphicsPlugin)
             .add(actor::ActorPlugin)

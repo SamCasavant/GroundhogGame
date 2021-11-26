@@ -8,18 +8,9 @@ use building_blocks::mesh::{greedy_quads, GreedyQuadsBuffer, IsOpaque,
                             MergeVoxel, OrientedCubeFace, UnorientedQuad,
                             RIGHT_HANDED_Y_UP_CONFIG};
 use building_blocks::prelude::*;
+use vox_format::types::ColorIndex;
 
-use crate::TextureAssets;
-
-pub struct VoxelPlugin;
-impl Plugin for VoxelPlugin {
-    fn build(
-        &self,
-        app: &mut AppBuilder,
-    ) {
-        ()
-    }
-}
+use crate::engine::asset::TextureAssets;
 
 pub fn build(
     // Builds the world
@@ -39,10 +30,15 @@ pub fn build(
     let rock_level =
         Extent3i::from_min_and_shape(PointN([0, 0, 0]), PointN([10, 10, 10]));
     voxels.fill_extent(&rock_level, Voxel(1));
-    println!(
-        "Is it loaded? {:?}",
-        asset_server.get_load_state(&texture_handle.block_textures)
-    );
+
+    // Load buildings TODO: Move these to asset_collections
+    let barnhouse_array = building_blocks::storage::vox_format::from_file::<
+        ColorIndex,
+        _,
+    >("assets/models/buildings/barnhouse.vox", 0)
+    .expect("reading file failed")
+    .expect("file not found");
+
     // let mut position = world::Position { x: 0, y: 0, z: 1 };
     let mut texture = textures.get_mut(&texture_handle.block_textures).unwrap();
     // TODO: The rest of this file has been copy-pasted

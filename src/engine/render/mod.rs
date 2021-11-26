@@ -6,6 +6,7 @@
 use bevy::prelude::*;
 use bevy::render::draw::OutsideFrustum;
 
+use crate::engine;
 use crate::engine::actor;
 use crate::engine::world;
 mod camera_movement;
@@ -19,12 +20,15 @@ impl Plugin for GraphicsPlugin {
         app: &mut AppBuilder,
     ) {
         debug!("Initializing GraphicsPlugin");
-        app.add_plugin(voxel::VoxelPlugin)
-            .insert_resource(ClearColor(Color::rgb(0.0, 0.0, 0.05)))
+        app.insert_resource(ClearColor(Color::rgb(0.0, 0.0, 0.05)))
             .insert_resource(Msaa { samples: 1 })
             .add_startup_system(setup.system())
             .add_system(animate_sprite_system.system().label("render"))
-            .add_system(camera_movement::pan_orbit_camera.system());
+            .add_system(camera_movement::pan_orbit_camera.system())
+            .add_system_set(
+                SystemSet::on_enter(engine::AppState::BuildingWorld)
+                    .with_system(engine::render::voxel::build.system()),
+            );
     }
 }
 
