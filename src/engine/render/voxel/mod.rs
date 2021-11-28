@@ -2,62 +2,57 @@ use bevy::{prelude::*,
            render::{mesh::Indices,
                     pipeline::{PipelineDescriptor, PrimitiveTopology,
                                RenderPipeline},
-                    shader::{ShaderStage, ShaderStages},
-                    texture::{AddressMode, SamplerDescriptor}}};
-use building_blocks::mesh::{greedy_quads, GreedyQuadsBuffer, IsOpaque,
-                            MergeVoxel, OrientedCubeFace, UnorientedQuad,
-                            RIGHT_HANDED_Y_UP_CONFIG};
+                    shader::{ShaderStage, ShaderStages}}};
+use building_blocks::mesh::{greedy_quads, GreedyQuadsBuffer, OrientedCubeFace,
+                            UnorientedQuad, RIGHT_HANDED_Y_UP_CONFIG};
 use building_blocks::prelude::*;
-use vox_format::types::ColorIndex;
+use building_blocks::storage::Channel;
 
-use crate::engine::asset::TextureAssets;
+use crate::engine::asset::{dot_vox_loader::{VoxModel, WorldVoxel},
+                           BuildingAssets, TextureAssets};
 
 pub fn build(
     // Builds the world
     mut commands: Commands,
     texture_handle: Res<TextureAssets>,
+    building_handles: Res<BuildingAssets>,
     asset_server: Res<AssetServer>,
+    mut models: ResMut<Assets<VoxModel>>,
     mut textures: ResMut<Assets<Texture>>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut pipelines: ResMut<Assets<PipelineDescriptor>>,
     mut shaders: ResMut<Assets<Shader>>,
 ) {
-    // Draw terrain
     let extent =
-        Extent3i::from_min_and_max(PointN([0; 3]), PointN([1000, 100, 1000]));
-    let mut voxels = Array3x1::fill(extent, Voxel::default());
+        Extent3i::from_min_and_shape(PointN([0; 3]), PointN([100, 100, 100]));
+    let mut world_array = Array3x1::fill(extent, WorldVoxel::EMPTY);
+    // Draw terrain
     let rock_level =
-        Extent3i::from_min_and_max(PointN([0, 0, 0]), PointN([100, 1, 100]));
-    voxels.fill_extent(&rock_level, Voxel(1));
+        Extent3i::from_min_and_shape(PointN([0, 0, 0]), PointN([100, 5, 100]));
+    world_array.fill_extent(&rock_level, WorldVoxel(1));
 
-    // Load buildings TODO: Move these to asset_collections
-    let barnhouse_array = building_blocks::storage::vox_format::from_file::<
-        ColorIndex,
-        _,
-    >("assets/models/buildings/barnhouse.vox", 0)
-    .expect("reading file failed")
-    .expect("file not found");
-    // let barnhouse_extent = Extent3i::from
+    // Add buildings
+    let mut barn_house_model = models
+        .get_mut(&building_handles.barn_house)
+        .expect("barnhouse.vox failed to initialize");
+    let barn_house_content = barn_house_model
+        .voxels
+        .borrow_channels(|voxel: Channel<WorldVoxel, &[WorldVoxel]>| voxel);
+    let barn_house_size = barn_house_model.size;
+    let barn_house_extent =
+        Extent3i::from_min_and_shape(PointN([0, 0, 0]), barn_house_size);
 
-    // let mut position = world::Position { x: 0, y: 0, z: 1 };
-    let mut texture = textures.get_mut(&texture_handle.block_textures).unwrap();
+    copy_extent(&barn_house_extent, &barn_house_content, &mut world_array);
     // TODO: The rest of this file has been copy-pasted
-    texture.sampler = SamplerDescriptor {
-        address_mode_u: AddressMode::Repeat,
-        address_mode_v: AddressMode::Repeat,
-        ..Default::default()
-    };
-
-    texture.reinterpret_stacked_2d_as_array(TEXTURE_LAYERS);
     let mut greedy_buffer =
         GreedyQuadsBuffer::new(extent, RIGHT_HANDED_Y_UP_CONFIG.quad_groups());
-    greedy_quads(&voxels, &extent, &mut greedy_buffer);
+    greedy_quads(&world_array, &extent, &mut greedy_buffer);
 
     let mut mesh_buf = MeshBuf::default();
     for group in greedy_buffer.quad_groups.iter() {
         for quad in group.quads.iter() {
-            let mat = voxels.get(quad.minimum);
+            let mat = world_array.get(quad.minimum);
             mesh_buf.add_quad(
                 &group.face,
                 quad,
@@ -178,23 +173,6 @@ void main() {
 }
 "#;
 
-#[derive(Default, Clone, Copy)]
-struct Voxel(u8);
-
-impl MergeVoxel for Voxel {
-    type VoxelValue = u8;
-
-    fn voxel_merge_value(&self) -> Self::VoxelValue { self.0 }
-}
-
-impl IsOpaque for Voxel {
-    fn is_opaque(&self) -> bool { true }
-}
-
-impl IsEmpty for Voxel {
-    fn is_empty(&self) -> bool { self.0 == 0 }
-}
-
 /// Utility struct for building the mesh
 #[derive(Debug, Default, Clone)]
 struct MeshBuf {
@@ -233,81 +211,3 @@ impl MeshBuf {
             .extend_from_slice(&face.quad_mesh_indices(start_index));
     }
 }
-// for asset in building_assets {
-//         // Load .vox file
-//         let building = dot_vox::load(asset).unwrap();
-//         let vox_palette = &building.palette;
-//         for voxel in &building.models[0].voxels {
-//             let color_u32 = palette::rgb::Rgb::<
-//                 palette::encoding::srgb::Srgb,
-//                 u8,
-//             >::from_u32::<palette::rgb::channels::Abgr>(
-//                 vox_palette[voxel.i as usize],
-//             );
-//             let color = Color::rgb(
-//                 color_u32.red as f32 / 255.0,
-//                 color_u32.green as f32 / 255.0,
-//                 color_u32.blue as f32 / 255.0,
-//             );
-//             commands.spawn().insert(Voxel {
-//                 x:        (voxel.x as u32) + position.x as u32,
-//                 y:        voxel.z as u32,
-//                 z:        voxel.y as u32,
-//                 material: color,
-//             });
-//         }
-//         position.x += building.models[0].size.x;
-//     }
-//     for asset in object_assets {
-//         // Load .vox file
-//         let object = dot_vox::load(asset).unwrap();
-//         let vox_palette = &object.palette;
-//         for voxel in &object.models[0].voxels {
-//             let color_u32 = palette::rgb::Rgb::<
-//                 palette::encoding::srgb::Srgb,
-//                 u8,
-//             >::from_u32::<palette::rgb::channels::Abgr>(
-//                 vox_palette[voxel.i as usize],
-//             );
-//             let color = Color::rgb(
-//                 color_u32.red as f32 / 255.0,
-//                 color_u32.green as f32 / 255.0,
-//                 color_u32.blue as f32 / 255.0,
-//             );
-//             commands.spawn().insert(ObjectVoxel {
-//                 x:        0.0,
-//                 y:        0.0,
-//                 z:        0.0,
-//                 material: color,
-//             });
-//             voxel_count += 1;
-//         }
-//         position.x += object.models[0].size.x.saturating_div(10);
-//     }
-//     for asset in character_assets {
-//         // Load .vox file
-//         let character = dot_vox::load(asset).unwrap();
-//         let vox_palette = &character.palette;
-//         for voxel in &character.models[0].voxels {
-//             let color_u32 = palette::rgb::Rgb::<
-//                 palette::encoding::srgb::Srgb,
-//                 u8,
-//             >::from_u32::<palette::rgb::channels::Abgr>(
-//                 vox_palette[voxel.i as usize],
-//             );
-//             let color = Color::rgb(
-//                 color_u32.red as f32 / 255.0,
-//                 color_u32.green as f32 / 255.0,
-//                 color_u32.blue as f32 / 255.0,
-//             );
-//             commands.spawn().insert(ObjectVoxel {
-//                 x:        0.0,
-//                 y:        0.0,
-//                 z:        0.0,
-//                 material: color,
-//             });
-//             voxel_count += 1;
-//         }
-//         position.x += character.models[0].size.x.saturating_div(10);
-//     }
-//}

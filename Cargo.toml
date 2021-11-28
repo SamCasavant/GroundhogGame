@@ -8,11 +8,12 @@ edition = "2021"
 bevy = { version = "0.5.0" } # , features = ["dynamic"] }
 pathfinding = "2.0.4"
 rand = "0.8.4"
+anyhow = "1.0.49"
 
 ## Voxel Dependencies
-building-blocks = { git = "https://github.com/bonsairobo/building-blocks.git", features = ["vox-format"]} 
+building-blocks = {version = "0.7.1", features = ["dot_vox"]}
 bevy_asset_loader = "0.6.0"
-vox-format = "0.1.0"
+dot_vox = "4.1.0"
 
 ## Debugging Dependencies:
 bevy_mod_debug_console = "0.0.2"

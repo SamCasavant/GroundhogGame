@@ -66,7 +66,18 @@ fn setup(
             range: 500.0,
             ..Default::default()
         },
-        transform: Transform::from_xyz(0.0, 0.0, 200.0),
+        transform: Transform::from_xyz(100.0, 100.0, 100.0),
+        ..Default::default()
+    });
+    commands.spawn_bundle(LightBundle {
+        light: Light {
+            color: Color::rgb(0.95, 0.8, 0.05),
+            fov: 360.0,
+            intensity: 99999.0,
+            range: 500.0,
+            ..Default::default()
+        },
+        transform: Transform::from_xyz(-100.0, -100.0, -100.0),
         ..Default::default()
     });
 }
