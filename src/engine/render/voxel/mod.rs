@@ -25,7 +25,7 @@ pub fn build(
     mut shaders: ResMut<Assets<Shader>>,
 ) {
     let extent =
-        Extent3i::from_min_and_shape(PointN([0; 3]), PointN([100, 100, 100]));
+        Extent3i::from_min_and_shape(PointN([0; 3]), PointN([1000, 100, 1000]));
     let mut world_array = Array3x1::fill(extent, WorldVoxel::EMPTY);
     // Draw terrain
     let rock_level =
