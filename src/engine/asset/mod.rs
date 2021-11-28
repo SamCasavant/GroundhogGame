@@ -22,7 +22,7 @@ impl Plugin for AssetPlugin {
         )
         .with_collection::<TextureAssets>()
         .with_collection::<BuildingAssets>()
-        .build(&mut app);
+        .build(app);
     }
 }
 

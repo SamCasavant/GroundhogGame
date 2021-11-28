@@ -16,9 +16,7 @@ pub fn build(
     mut commands: Commands,
     texture_handle: Res<TextureAssets>,
     building_handles: Res<BuildingAssets>,
-    asset_server: Res<AssetServer>,
     mut models: ResMut<Assets<VoxModel>>,
-    mut textures: ResMut<Assets<Texture>>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut pipelines: ResMut<Assets<PipelineDescriptor>>,
@@ -33,8 +31,8 @@ pub fn build(
     world_array.fill_extent(&rock_level, WorldVoxel(1));
 
     // Add buildings
-    let mut barn_house_model = models
-        .get_mut(&building_handles.barn_house)
+    let barn_house_model = models
+        .get(&building_handles.barn_house)
         .expect("barnhouse.vox failed to initialize");
     let barn_house_content = barn_house_model
         .voxels

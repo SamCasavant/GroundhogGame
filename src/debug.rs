@@ -1,5 +1,5 @@
-#[allow(dead_code)]
-#[allow(unused_imports)]
+#![allow(dead_code)]
+#![allow(unused_imports)]
 use bevy::diagnostic::FrameTimeDiagnosticsPlugin;
 use bevy::ecs::{archetype::Archetypes, component::Components, entity::Entities};
 use bevy::{app::AppExit, prelude::*, render::render_graph::RenderGraph};

@@ -36,8 +36,6 @@ pub const TILE_WIDTH: f32 = 64.0;
 
 fn setup(
     mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
     mut ambient_light: ResMut<bevy::pbr::AmbientLight>,
 ) {
     // set up the camera
