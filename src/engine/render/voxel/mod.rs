@@ -42,39 +42,53 @@ pub fn build(
         Extent3i::from_min_and_shape(PointN([0, 0, 0]), barn_house_size);
 
     copy_extent(&barn_house_extent, &barn_house_content, &mut world_array);
-    // TODO: The rest of this file has been copy-pasted
-    let mut greedy_buffer =
-        GreedyQuadsBuffer::new(extent, RIGHT_HANDED_Y_UP_CONFIG.quad_groups());
-    greedy_quads(&world_array, &extent, &mut greedy_buffer);
+    let mut surface_nets_buffer =
+        building_blocks::mesh::surface_nets::SurfaceNetsBuffer::default();
 
-    let mut mesh_buf = MeshBuf::default();
-    for group in greedy_buffer.quad_groups.iter() {
-        for quad in group.quads.iter() {
-            let mat = world_array.get(quad.minimum);
-            mesh_buf.add_quad(
-                &group.face,
-                quad,
-                RIGHT_HANDED_Y_UP_CONFIG.u_flip_face,
-                mat.0 as u32 - 1,
-            );
+    let mut world_sdf = Array3x1::fill_with(extent, |p| {
+        if world_array.get(p).is_empty() {
+            1.0
+        } else {
+            -1.0
         }
-    }
+    });
+
+    building_blocks::mesh::surface_nets::surface_nets(
+        &mut world_sdf,
+        &extent,
+        // &building_blocks::mesh::surface_nets::
+        // padded_surface_nets_chunk_extent(     &extent,
+        // ),
+        1.0,
+        &mut surface_nets_buffer,
+    );
 
     let mut render_mesh = Mesh::new(PrimitiveTopology::TriangleList);
+    render_mesh.set_attribute(Mesh::ATTRIBUTE_UV_0, vec![
+        0.0;
+        surface_nets_buffer
+            .mesh
+            .positions
+            .len()
+    ]);
+    render_mesh.set_attribute("Vertex_Layer", vec![
+        0.0;
+        surface_nets_buffer
+            .mesh
+            .positions
+            .len()
+    ]);
+    render_mesh.set_attribute(
+        Mesh::ATTRIBUTE_POSITION,
+        surface_nets_buffer.mesh.positions,
+    );
+    render_mesh.set_attribute(
+        Mesh::ATTRIBUTE_NORMAL,
+        surface_nets_buffer.mesh.normals,
+    );
 
-    let MeshBuf {
-        positions,
-        normals,
-        tex_coords,
-        layer,
-        indices,
-    } = mesh_buf;
-
-    render_mesh.set_attribute(Mesh::ATTRIBUTE_POSITION, positions);
-    render_mesh.set_attribute(Mesh::ATTRIBUTE_NORMAL, normals);
-    render_mesh.set_attribute(Mesh::ATTRIBUTE_UV_0, tex_coords);
-    render_mesh.set_attribute("Vertex_Layer", layer);
-    render_mesh.set_indices(Some(Indices::U32(indices)));
+    render_mesh
+        .set_indices(Some(Indices::U32(surface_nets_buffer.mesh.indices)));
 
     let pipeline =
         pipelines.add(PipelineDescriptor::default_config(ShaderStages {
@@ -95,6 +109,7 @@ pub fn build(
     });
 }
 
+// TODO: The rest of this file has been copy-pasted
 const TEXTURE_LAYERS: u32 = 4;
 const UV_SCALE: f32 = 0.1;
 /// Default bevy vertex shader with added vertex attribute for texture layer

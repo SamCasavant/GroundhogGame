@@ -22,6 +22,7 @@ impl Default for PanOrbitCamera {
     }
 }
 
+// noinspection ALL
 /// Pan the camera with middle mouse click, zoom with scroll wheel, orbit with
 /// right mouse click.
 pub fn pan_orbit_camera(
