@@ -89,7 +89,7 @@ fn animate_sprite_system(
         Without<OutsideFrustum>,
     )>
 ) {
-    debug!("Running animate_sprite_system.");
+    trace!("Running animate_sprite_system.");
     for (mut sprite, mut transform, orientation, position, _) in
         &mut query.iter_mut()
     {

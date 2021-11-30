@@ -23,12 +23,36 @@ pub fn build(
     mut shaders: ResMut<Assets<Shader>>,
 ) {
     let extent =
-        Extent3i::from_min_and_shape(PointN([0; 3]), PointN([1000, 100, 1000]));
+        Extent3i::from_min_and_shape(PointN([0; 3]), PointN([200, 100, 200]));
     let mut world_array = Array3x1::fill(extent, WorldVoxel::EMPTY);
     // Draw terrain
     let rock_level =
         Extent3i::from_min_and_shape(PointN([0, 0, 0]), PointN([100, 5, 100]));
     world_array.fill_extent(&rock_level, WorldVoxel(1));
+    let dirt_level =
+        Extent3i::from_min_and_shape(PointN([0, 5, 0]), PointN([100, 20, 100]));
+    world_array.fill_extent(&dirt_level, WorldVoxel(1));
+    // Construct a pyramid
+
+    let pyramid_position = PointN([50, 20, 50]);
+    let pyramid_extent =
+        Extent3i::from_min_and_shape(pyramid_position, PointN([80, 80, 80]));
+    let mut pyramid_array = Array3x1::fill(pyramid_extent, WorldVoxel::EMPTY);
+    for y in 0..80 {
+        let side_length: i32 = 80 - y;
+        let corner = pyramid_position
+            + PointN([
+                40 - (side_length.checked_div(2).unwrap()),
+                y,
+                40 - (side_length.checked_div(2).unwrap()),
+            ]);
+        let layer = Extent3i::from_min_and_shape(
+            corner,
+            PointN([side_length, 1, side_length]),
+        );
+        pyramid_array.fill_extent(&layer, WorldVoxel(1));
+    }
+    copy_extent(&pyramid_extent, &pyramid_array, &mut world_array);
 
     // Add buildings
     let barn_house_model = models
@@ -46,19 +70,37 @@ pub fn build(
         building_blocks::mesh::surface_nets::SurfaceNetsBuffer::default();
 
     let mut world_sdf = Array3x1::fill_with(extent, |p| {
+        let mut sd = 0.0_f32;
         if world_array.get(p).is_empty() {
-            1.0
+            sd = 3.0;
         } else {
+            sd = -3.0;
+        }
+        for point in Point3i::MOORE_OFFSETS {
+            if world_array.contains(p + point) {
+                if world_array.get(p + point).is_empty() {
+                    sd += 1.0;
+                } else {
+                    sd -= 1.0;
+                }
+            } else {
+                sd -= 1.0;
+            }
+        }
+
+        sd = ((sd / 8.0) * 10.0).round() / 10.0;
+        if sd > 1.0 {
+            1.0
+        } else if sd < -1.0 {
             -1.0
+        } else {
+            sd
         }
     });
 
     building_blocks::mesh::surface_nets::surface_nets(
         &mut world_sdf,
         &extent,
-        // &building_blocks::mesh::surface_nets::
-        // padded_surface_nets_chunk_extent(     &extent,
-        // ),
         1.0,
         &mut surface_nets_buffer,
     );

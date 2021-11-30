@@ -118,9 +118,11 @@ pub fn pan_orbit_camera(
             // emulating parent/child to make the yaw/y-axis rotation behave
             // like a turntable parent = x and y rotation
             // child = z-offset
+
             let rot_matrix = Mat3::from_quat(transform.rotation);
             transform.translation = pan_orbit.focus
                 + rot_matrix.mul_vec3(Vec3::new(0.0, 0.0, pan_orbit.radius));
+            debug!("Camera position: {:?}", transform.translation);
         }
     }
 }
