@@ -22,19 +22,17 @@ pub fn build(
     mut pipelines: ResMut<Assets<PipelineDescriptor>>,
     mut shaders: ResMut<Assets<Shader>>,
 ) {
-    let extent =
-        Extent3i::from_min_and_shape(PointN([0; 3]), PointN([200, 100, 200]));
-    let mut world_array = Array3x1::fill(extent, WorldVoxel::EMPTY);
     // Draw terrain
-    let rock_level =
-        Extent3i::from_min_and_shape(PointN([0, 0, 0]), PointN([100, 5, 100]));
-    world_array.fill_extent(&rock_level, WorldVoxel(1));
+    let extent =
+        Extent3i::from_min_and_shape(PointN([0; 3]), PointN([200, 200, 200]));
+    let mut world_array = Array3x1::fill(extent, WorldVoxel::EMPTY);
+    // Draw terrain1
     let dirt_level =
-        Extent3i::from_min_and_shape(PointN([0, 5, 0]), PointN([100, 20, 100]));
+        Extent3i::from_min_and_shape(PointN([0, 0, 0]), PointN([100, 20, 100]));
     world_array.fill_extent(&dirt_level, WorldVoxel(1));
     // Construct a pyramid
 
-    let pyramid_position = PointN([50, 20, 50]);
+    let pyramid_position = PointN([50, 21, 50]);
     let pyramid_extent =
         Extent3i::from_min_and_shape(pyramid_position, PointN([80, 80, 80]));
     let mut pyramid_array = Array3x1::fill(pyramid_extent, WorldVoxel::EMPTY);
@@ -70,38 +68,27 @@ pub fn build(
         building_blocks::mesh::surface_nets::SurfaceNetsBuffer::default();
 
     let mut world_sdf = Array3x1::fill_with(extent, |p| {
-        let mut sd = 0.0_f32;
-        if world_array.get(p).is_empty() {
-            sd = 3.0;
+        let mut sd = 0;
+        if world_array.contains(p + PointN([0, 1, 0]))
+            && !world_array.get(p + PointN([0, 1, 0])).is_empty()
+        {
+            sd = -1;
+        } else if world_array.get(p).is_empty() {
+            sd = 1;
         } else {
-            sd = -3.0;
+            sd = 0;
         }
-        for point in Point3i::MOORE_OFFSETS {
-            if world_array.contains(p + point) {
-                if world_array.get(p + point).is_empty() {
-                    sd += 1.0;
-                } else {
-                    sd -= 1.0;
-                }
-            } else {
-                sd -= 1.0;
-            }
+        let neighbor_heights = NeighborHeights::new(&world_array, p);
+        sd += neighbor_heights.sum();
+        if p == PointN([2, 3, 2]) {
+            println! {"sd_total: {:?}, neighbor_heights: {:?}, self: {:?} ", sd, neighbor_heights, world_array.get(p)};
         }
-
-        sd = ((sd / 8.0) * 10.0).round() / 10.0;
-        if sd > 1.0 {
-            1.0
-        } else if sd < -1.0 {
-            -1.0
-        } else {
-            sd
-        }
+        sd as f32 / 9.0
     });
-
     building_blocks::mesh::surface_nets::surface_nets(
         &mut world_sdf,
         &extent,
-        1.0,
+        2.0,
         &mut surface_nets_buffer,
     );
 
@@ -132,23 +119,98 @@ pub fn build(
     render_mesh
         .set_indices(Some(Indices::U32(surface_nets_buffer.mesh.indices)));
 
-    let pipeline =
-        pipelines.add(PipelineDescriptor::default_config(ShaderStages {
-            vertex:   shaders
-                .add(Shader::from_glsl(ShaderStage::Vertex, VERTEX_SHADER)),
-            fragment: Some(shaders.add(Shader::from_glsl(
-                ShaderStage::Fragment,
-                FRAGMENT_SHADER,
-            ))),
-        }));
+    // let pipeline =
+    //     pipelines.add(PipelineDescriptor::default_config(ShaderStages {
+    //         vertex:   shaders
+    //             .add(Shader::from_glsl(ShaderStage::Vertex, VERTEX_SHADER)),
+    //         fragment: Some(shaders.add(Shader::from_glsl(
+    //             ShaderStage::Fragment,
+    //             FRAGMENT_SHADER,
+    //         ))),
+    //     }));
     commands.spawn_bundle(PbrBundle {
         mesh: meshes.add(render_mesh),
-        render_pipelines: RenderPipelines::from_pipelines(vec![
-            RenderPipeline::new(pipeline),
-        ]),
-        material: materials.add(texture_handle.block_textures.clone().into()),
+        // render_pipelines: RenderPipelines::from_pipelines(vec![
+        //     RenderPipeline::new(pipeline),
+        // ]),
+        material: materials.add(StandardMaterial {
+            base_color: Color::WHITE,
+            metallic: 1.0,
+            reflectance: 0.3,
+            ..Default::default()
+        }),
         ..Default::default()
     });
+}
+#[derive(Debug)]
+struct NeighborHeights {
+    n:  i32,
+    nw: i32,
+    w:  i32,
+    sw: i32,
+    s:  i32,
+    se: i32,
+    e:  i32,
+    ne: i32,
+}
+impl NeighborHeights {
+    const NORTH: PointN<[i32; 3]> = PointN([1, 0, 0]);
+    const NORTH_WEST: PointN<[i32; 3]> = PointN([1, 0, -1]);
+    const WEST: PointN<[i32; 3]> = PointN([0, 0, -1]);
+    const SOUTH_WEST: PointN<[i32; 3]> = PointN([-1, 0, -1]);
+    const SOUTH: PointN<[i32; 3]> = PointN([-1, 0, 0]);
+    const SOUTH_EAST: PointN<[i32; 3]> = PointN([-1, 0, 1]);
+    const EAST: PointN<[i32; 3]> = PointN([0, 0, 1]);
+    const NORTH_EAST: PointN<[i32; 3]> = PointN([1, 0, 1]);
+    const HEIGHTS: [PointN<[i32; 3]>; 3] =
+        [PointN([0, 1, 0]), PointN([0, 0, 0]), PointN([0, -1, 0])];
+
+    pub fn new(
+        world_array: &Array3x1<WorldVoxel>,
+        p: PointN<[i32; 3]>,
+    ) -> NeighborHeights {
+        trace!("Getting neighbor heights for {:?}", p);
+        NeighborHeights {
+            n:  Self::get_height(world_array, p + NeighborHeights::NORTH),
+            nw: Self::get_height(world_array, p + NeighborHeights::NORTH_WEST),
+            w:  Self::get_height(world_array, p + NeighborHeights::WEST),
+            sw: Self::get_height(world_array, p + NeighborHeights::SOUTH_WEST),
+            s:  Self::get_height(world_array, p + NeighborHeights::SOUTH),
+            se: Self::get_height(world_array, p + NeighborHeights::SOUTH_EAST),
+            e:  Self::get_height(world_array, p + NeighborHeights::EAST),
+            ne: Self::get_height(world_array, p + NeighborHeights::NORTH_EAST),
+        }
+    }
+    fn sum(&self) -> i32 {
+        self.n
+            + self.nw
+            + self.w
+            + self.sw
+            + self.s
+            + self.se
+            + self.e
+            + self.ne
+    }
+    fn get_height(
+        world_array: &Array3x1<WorldVoxel>,
+        c: PointN<[i32; 3]>,
+    ) -> i32 {
+        trace!("Checking height at {:?}", c);
+        for cur_height in (-1..=1).rev() {
+            if world_array.contains(c + PointN([0, cur_height, 0])) {
+                if !world_array.get(c + PointN([0, cur_height, 0])).is_empty() {
+                    trace!(
+                        "Found height at {}, because {:?} is {:?}",
+                        cur_height,
+                        c + PointN([0, cur_height, 0]),
+                        world_array.get(c + PointN([0, cur_height, 0]))
+                    );
+                    return -cur_height;
+                }
+            }
+        }
+        return 1;
+    }
 }
 
 // TODO: The rest of this file has been copy-pasted

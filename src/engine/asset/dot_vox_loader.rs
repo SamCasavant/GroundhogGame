@@ -54,7 +54,7 @@ impl AssetLoader for VoxModelLoader {
     fn extensions(&self) -> &[&str] { &["vox"] }
 }
 
-#[derive(Default, Clone, Copy)]
+#[derive(Debug, Default, Clone, Copy)]
 pub struct WorldVoxel(pub u8);
 
 impl WorldVoxel {

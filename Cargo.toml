@@ -20,7 +20,7 @@ bevy_mod_debug_console = "0.0.2"
 bevy_mod_debugdump = "0.2"
 pretty_trace = {git = "https://github.com/10XGenomics/rust-toolbox.git"}
 log = "0.4"
-env_logger = "0.9"
+env_logger = "0.8.4"
 
 [profile.release]
 debug = true

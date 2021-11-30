@@ -5,6 +5,7 @@
 
 use bevy::prelude::*;
 use bevy::render::draw::OutsideFrustum;
+use log::trace;
 
 use crate::engine;
 use crate::engine::actor;
@@ -54,7 +55,7 @@ fn setup(
 
     // Ambient light
     ambient_light.color = Color::WHITE;
-    ambient_light.brightness = 1.0;
+    ambient_light.brightness = 0.1;
     // Sunlight
     commands.spawn_bundle(LightBundle {
         light: Light {
@@ -89,7 +90,6 @@ fn animate_sprite_system(
         Without<OutsideFrustum>,
     )>
 ) {
-    trace!("Running animate_sprite_system.");
     for (mut sprite, mut transform, orientation, position, _) in
         &mut query.iter_mut()
     {
