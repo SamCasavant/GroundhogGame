@@ -24,73 +24,68 @@ pub fn build(
 ) {
     // Draw terrain
     let extent =
-        Extent3i::from_min_and_shape(PointN([0; 3]), PointN([200, 200, 200]));
+        Extent3i::from_min_and_shape(PointN([0; 3]), PointN([200, 100, 200]));
     let mut world_array = Array3x1::fill(extent, WorldVoxel::EMPTY);
     // Draw terrain1
     let dirt_level =
-        Extent3i::from_min_and_shape(PointN([0, 0, 0]), PointN([100, 20, 100]));
+        Extent3i::from_min_and_shape(PointN([0, 0, 0]), PointN([200, 2, 200]));
     world_array.fill_extent(&dirt_level, WorldVoxel(1));
-    // Construct a pyramid
 
-    let pyramid_position = PointN([50, 21, 50]);
+    // Construct a pyramid
+    let pyramid_position = PointN([0, 2, 0]);
     let pyramid_extent =
         Extent3i::from_min_and_shape(pyramid_position, PointN([80, 80, 80]));
     let mut pyramid_array = Array3x1::fill(pyramid_extent, WorldVoxel::EMPTY);
-    for y in 0..80 {
-        let side_length: i32 = 80 - y;
-        let corner = pyramid_position
-            + PointN([
-                40 - (side_length.checked_div(2).unwrap()),
-                y,
-                40 - (side_length.checked_div(2).unwrap()),
-            ]);
+    for y in 0..20 {
+        let side_length: i32 = 20 - y;
+        let corner = pyramid_position + PointN([y; 3]);
         let layer = Extent3i::from_min_and_shape(
             corner,
-            PointN([side_length, 1, side_length]),
+            PointN([side_length * 2, 1, side_length * 2]),
         );
         pyramid_array.fill_extent(&layer, WorldVoxel(1));
     }
     copy_extent(&pyramid_extent, &pyramid_array, &mut world_array);
 
+    let tall_pyramid_position = PointN([60, 2, 60]);
+    let tall_pyramid_extent = Extent3i::from_min_and_shape(
+        tall_pyramid_position,
+        PointN([40, 80, 40]),
+    );
+    let mut tall_pyramid_array =
+        Array3x1::fill(tall_pyramid_extent, WorldVoxel::EMPTY);
+    for y in 0..20 {
+        let side_length = 40 - y * 2;
+        let corner = tall_pyramid_position + PointN([y, 2 * y, y]);
+        let layer = Extent3i::from_min_and_shape(
+            corner,
+            PointN([side_length, 2 * y, side_length]),
+        );
+        tall_pyramid_array.fill_extent(&layer, WorldVoxel(1));
+    }
+    copy_extent(&tall_pyramid_extent, &tall_pyramid_array, &mut world_array);
+
     // Add buildings
-    let barn_house_model = models
+    let barn_house = models
         .get(&building_handles.barn_house)
         .expect("barnhouse.vox failed to initialize");
-    let barn_house_content = barn_house_model
+    let barn_house_content = barn_house
         .voxels
         .borrow_channels(|voxel: Channel<WorldVoxel, &[WorldVoxel]>| voxel);
-    let barn_house_size = barn_house_model.size;
-    let barn_house_extent =
-        Extent3i::from_min_and_shape(PointN([0, 0, 0]), barn_house_size);
-
-    copy_extent(&barn_house_extent, &barn_house_content, &mut world_array);
+    // copy_extent(&barn_house.extent, &barn_house.content, &mut world_array);
     let mut surface_nets_buffer =
         building_blocks::mesh::surface_nets::SurfaceNetsBuffer::default();
+    let world_sdf = boolean_sdf(extent, &world_array);
+    let averaged_world_sdf =
+        averaged_sdf(extent, &averaged_sdf(extent, &world_sdf, 1), 1);
 
-    let mut world_sdf = Array3x1::fill_with(extent, |p| {
-        let mut sd = 0;
-        if world_array.contains(p + PointN([0, 1, 0]))
-            && !world_array.get(p + PointN([0, 1, 0])).is_empty()
-        {
-            sd = -1;
-        } else if world_array.get(p).is_empty() {
-            sd = 1;
-        } else {
-            sd = 0;
-        }
-        let neighbor_heights = NeighborHeights::new(&world_array, p);
-        sd += neighbor_heights.sum();
-        if p == PointN([2, 3, 2]) {
-            println! {"sd_total: {:?}, neighbor_heights: {:?}, self: {:?} ", sd, neighbor_heights, world_array.get(p)};
-        }
-        sd as f32 / 9.0
-    });
     building_blocks::mesh::surface_nets::surface_nets(
-        &mut world_sdf,
+        &averaged_world_sdf,
         &extent,
         2.0,
         &mut surface_nets_buffer,
     );
+    println!("Build completed");
 
     let mut render_mesh = Mesh::new(PrimitiveTopology::TriangleList);
     render_mesh.set_attribute(Mesh::ATTRIBUTE_UV_0, vec![
@@ -144,6 +139,7 @@ pub fn build(
 }
 #[derive(Debug)]
 struct NeighborHeights {
+    p:  i32,
     n:  i32,
     nw: i32,
     w:  i32,
@@ -162,27 +158,114 @@ impl NeighborHeights {
     const SOUTH_EAST: PointN<[i32; 3]> = PointN([-1, 0, 1]);
     const EAST: PointN<[i32; 3]> = PointN([0, 0, 1]);
     const NORTH_EAST: PointN<[i32; 3]> = PointN([1, 0, 1]);
-    const HEIGHTS: [PointN<[i32; 3]>; 3] =
-        [PointN([0, 1, 0]), PointN([0, 0, 0]), PointN([0, -1, 0])];
 
     pub fn new(
+        extent: &Extent3i,
         world_array: &Array3x1<WorldVoxel>,
         p: PointN<[i32; 3]>,
-    ) -> NeighborHeights {
+    ) -> Self {
         trace!("Getting neighbor heights for {:?}", p);
+        let global_neighbor_heights = Self {
+            p:  Self::get_height(extent, world_array, p),
+            n:  Self::get_height(
+                extent,
+                world_array,
+                p + NeighborHeights::NORTH,
+            ),
+            nw: Self::get_height(
+                extent,
+                world_array,
+                p + NeighborHeights::NORTH_WEST,
+            ),
+            w:  Self::get_height(
+                extent,
+                world_array,
+                p + NeighborHeights::WEST,
+            ),
+            sw: Self::get_height(
+                extent,
+                world_array,
+                p + NeighborHeights::SOUTH_WEST,
+            ),
+            s:  Self::get_height(
+                extent,
+                world_array,
+                p + NeighborHeights::SOUTH,
+            ),
+            se: Self::get_height(
+                extent,
+                world_array,
+                p + NeighborHeights::SOUTH_EAST,
+            ),
+            e:  Self::get_height(
+                extent,
+                world_array,
+                p + NeighborHeights::EAST,
+            ),
+            ne: Self::get_height(
+                extent,
+                world_array,
+                p + NeighborHeights::NORTH_EAST,
+            ),
+        };
+        let local_adjustment = global_neighbor_heights.min();
         NeighborHeights {
-            n:  Self::get_height(world_array, p + NeighborHeights::NORTH),
-            nw: Self::get_height(world_array, p + NeighborHeights::NORTH_WEST),
-            w:  Self::get_height(world_array, p + NeighborHeights::WEST),
-            sw: Self::get_height(world_array, p + NeighborHeights::SOUTH_WEST),
-            s:  Self::get_height(world_array, p + NeighborHeights::SOUTH),
-            se: Self::get_height(world_array, p + NeighborHeights::SOUTH_EAST),
-            e:  Self::get_height(world_array, p + NeighborHeights::EAST),
-            ne: Self::get_height(world_array, p + NeighborHeights::NORTH_EAST),
+            p:  global_neighbor_heights.p - local_adjustment,
+            n:  global_neighbor_heights.n - local_adjustment,
+            nw: global_neighbor_heights.nw - local_adjustment,
+            w:  global_neighbor_heights.w - local_adjustment,
+            sw: global_neighbor_heights.sw - local_adjustment,
+            s:  global_neighbor_heights.s - local_adjustment,
+            se: global_neighbor_heights.se - local_adjustment,
+            e:  global_neighbor_heights.e - local_adjustment,
+            ne: global_neighbor_heights.ne - local_adjustment,
         }
     }
+    fn avg(&self) -> f32 {
+        // Averages the heights of the neighbors
+        (self.p
+            + self.n
+            + self.s
+            + self.w
+            + self.e
+            + self.nw
+            + self.ne
+            + self.sw
+            + self.se) as f32
+            / 9.0
+    }
+    fn min(&self) -> i32 {
+        let mut min = self.p;
+        if self.n < min {
+            min = self.n;
+        }
+        if self.nw < min {
+            min = self.nw;
+        }
+        if self.w < min {
+            min = self.w;
+        }
+        if self.sw < min {
+            min = self.sw;
+        }
+        if self.s < min {
+            min = self.s;
+        }
+        if self.se < min {
+            min = self.se;
+        }
+        if self.e < min {
+            min = self.e;
+        }
+        if self.ne < min {
+            min = self.ne;
+        }
+        min
+    }
+
     fn sum(&self) -> i32 {
-        self.n
+        self.p
+            + self.n
             + self.nw
             + self.w
             + self.sw
@@ -192,27 +275,59 @@ impl NeighborHeights {
             + self.ne
     }
     fn get_height(
+        extent: &Extent3i,
         world_array: &Array3x1<WorldVoxel>,
-        c: PointN<[i32; 3]>,
+        column: PointN<[i32; 3]>,
     ) -> i32 {
-        trace!("Checking height at {:?}", c);
-        for cur_height in (-1..=1).rev() {
-            if world_array.contains(c + PointN([0, cur_height, 0])) {
-                if !world_array.get(c + PointN([0, cur_height, 0])).is_empty() {
-                    trace!(
-                        "Found height at {}, because {:?} is {:?}",
-                        cur_height,
-                        c + PointN([0, cur_height, 0]),
-                        world_array.get(c + PointN([0, cur_height, 0]))
-                    );
-                    return -cur_height;
-                }
+        // returns the highest non-empty y-value in the voxel's column
+        let mut y = extent.shape.y();
+        while y >= 0 {
+            let p = PointN([column.x(), y, column.z()]);
+            if world_array.contains(p) && !world_array.get(p).is_empty() {
+                return y;
             }
+            y -= 1;
         }
-        return 1;
+        0
     }
 }
 
+fn boolean_sdf(
+    extent: Extent3i,
+    world_array: &Array3x1<WorldVoxel>,
+) -> Array3x1<f32> {
+    Array3x1::fill_with(extent, |p| {
+        if world_array.get(p).is_empty() {
+            1.0
+        } else {
+            -1.0
+        }
+    })
+}
+
+fn averaged_sdf(
+    extent: Extent3i,
+    voxel_array: &Array3x1<f32>,
+    radius: i32,
+) -> Array3x1<f32> {
+    // smooths an sdf by taking the mean of a (2r+1)x(2r+1)x(2r+1) cube
+    Array3x1::fill_with(extent, |p| {
+        let mut sum = 0.0;
+        let mut count = 0;
+        for x in -radius..=radius {
+            for y in -radius..=radius {
+                for z in -radius..=radius {
+                    let p = p + PointN([x, y, z]);
+                    if voxel_array.contains(p) {
+                        sum += voxel_array.get(p);
+                        count += 1;
+                    }
+                }
+            }
+        }
+        sum / count as f32
+    })
+}
 // TODO: The rest of this file has been copy-pasted
 const TEXTURE_LAYERS: u32 = 4;
 const UV_SCALE: f32 = 0.1;
