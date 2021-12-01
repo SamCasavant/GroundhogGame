@@ -11,7 +11,7 @@ use dot_vox::{DotVoxData, Model, Size, Voxel};
 #[uuid = "a4d4aa0a-f18d-4c3b-939c-56aee51e4dea"]
 pub struct VoxModel {
     pub voxels: Array3x1<WorldVoxel>,
-    pub size:   PointN<[i32; 3]>,
+    pub extent: Extent3i,
 }
 
 impl VoxModel {
@@ -22,15 +22,15 @@ impl VoxModel {
         } = &vox_data.models[0];
         let shape = PointN([*x as i32, *z as i32, *y as i32]);
         let extent = Extent3i::from_min_and_shape(PointN([0, 0, 0]), shape);
-        let mut map = Array3x1::fill(extent, WorldVoxel::EMPTY);
+        let mut voxel_map = Array3x1::fill(extent, WorldVoxel::EMPTY);
         for Voxel { x, y, z, i } in voxels.iter() {
             let point = PointN([*x as i32, *z as i32, *y as i32]);
-            *map.get_mut(point) = WorldVoxel(*i + 1);
+            *voxel_map.get_mut(point) = WorldVoxel(*i + 1);
         }
 
         Self {
-            voxels: map,
-            size:   shape,
+            voxels: voxel_map,
+            extent,
         }
     }
 }
