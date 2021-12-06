@@ -1,3 +1,5 @@
+mod dag;
+
 use bevy::{prelude::*,
            render::{mesh::Indices,
                     pipeline::{PipelineDescriptor, PrimitiveTopology,
@@ -23,68 +25,110 @@ pub fn build(
     mut shaders: ResMut<Assets<Shader>>,
 ) {
     // Draw terrain
-    let extent =
-        Extent3i::from_min_and_shape(PointN([0; 3]), PointN([200, 100, 200]));
-    let mut world_array = Array3x1::fill(extent, WorldVoxel::EMPTY);
-    // Draw terrain1
-    let dirt_level =
-        Extent3i::from_min_and_shape(PointN([0, 0, 0]), PointN([200, 2, 200]));
-    world_array.fill_extent(&dirt_level, WorldVoxel(1));
+    let world_extent =
+        Extent3i::from_min_and_shape(PointN([0; 3]), PointN([40, 100, 40]));
+    let mut world_array = Array3x1::fill(world_extent, WorldVoxel::EMPTY);
+    let base =
+        Extent3i::from_min_and_shape(PointN([0, 0, 0]), PointN([40, 2, 40]));
+    let base_slope =
+        Extent3i::from_min_and_shape(PointN([0, 2, 0]), PointN([20, 2, 40]));
+    let left_edge =
+        Extent3i::from_min_and_shape(PointN([0, 2, 0]), PointN([40, 5, 10]));
+    let right_edge =
+        Extent3i::from_min_and_shape(PointN([0, 2, 30]), PointN([40, 5, 10]));
+    world_array.fill_extent(&base, WorldVoxel(1));
+    world_array.fill_extent(&left_edge, WorldVoxel(1));
+    world_array.fill_extent(&right_edge, WorldVoxel(1));
+    world_array.fill_extent(&base_slope, WorldVoxel(1));
 
-    // Construct a pyramid
-    let pyramid_position = PointN([0, 2, 0]);
-    let pyramid_extent =
-        Extent3i::from_min_and_shape(pyramid_position, PointN([80, 80, 80]));
-    let mut pyramid_array = Array3x1::fill(pyramid_extent, WorldVoxel::EMPTY);
-    for y in 0..20 {
-        let side_length: i32 = 20 - y;
-        let corner = pyramid_position + PointN([y; 3]);
-        let layer = Extent3i::from_min_and_shape(
-            corner,
-            PointN([side_length * 2, 1, side_length * 2]),
-        );
-        pyramid_array.fill_extent(&layer, WorldVoxel(1));
-    }
-    copy_extent(&pyramid_extent, &pyramid_array, &mut world_array);
-
-    let tall_pyramid_position = PointN([60, 2, 60]);
-    let tall_pyramid_extent = Extent3i::from_min_and_shape(
-        tall_pyramid_position,
-        PointN([40, 80, 40]),
-    );
-    let mut tall_pyramid_array =
-        Array3x1::fill(tall_pyramid_extent, WorldVoxel::EMPTY);
-    for y in 0..20 {
-        let side_length = 40 - y * 2;
-        let corner = tall_pyramid_position + PointN([y, 2 * y, y]);
-        let layer = Extent3i::from_min_and_shape(
-            corner,
-            PointN([side_length, 2 * y, side_length]),
-        );
-        tall_pyramid_array.fill_extent(&layer, WorldVoxel(1));
-    }
-    copy_extent(&tall_pyramid_extent, &tall_pyramid_array, &mut world_array);
-
-    // Add buildings
-    let barn_house = models
-        .get(&building_handles.barn_house)
-        .expect("barnhouse.vox failed to initialize");
-    let barn_house_content = barn_house
-        .voxels
-        .borrow_channels(|voxel: Channel<WorldVoxel, &[WorldVoxel]>| voxel);
-    // copy_extent(&barn_house.extent, &barn_house.content, &mut world_array);
     let mut surface_nets_buffer =
         building_blocks::mesh::surface_nets::SurfaceNetsBuffer::default();
-    let world_sdf = boolean_sdf(extent, &world_array);
-    let averaged_world_sdf =
-        averaged_sdf(extent, &averaged_sdf(extent, &world_sdf, 1), 1);
+    let world_sdf = boolean_sdf(world_extent, &world_array);
+    let averaged_world_sdf = averaged_sdf(world_extent, &world_sdf, 1);
 
     building_blocks::mesh::surface_nets::surface_nets(
         &averaged_world_sdf,
-        &extent,
+        &world_extent,
         2.0,
         &mut surface_nets_buffer,
     );
+
+    let water_extent =
+        Extent3i::from_min_and_shape(PointN([5, 5, 40]), PointN([1, 1, 1]));
+    let mut water_array = Array3x1::fill(water_extent, WorldVoxel(1));
+    let water_mesh =
+        water_array.for_each(&water_extent, |p: Point3i, voxel: WorldVoxel| {
+            if voxel == WorldVoxel(1) {
+                let x = p.x() as f32;
+                let y = p.y() as f32;
+                let z = p.z() as f32;
+                let back_left = [x, y, z];
+                let back_right = [x + 2.0, y, z];
+                let front_left = [x, y, z + 2.0];
+                let front_right = [x + 2.0, y, z + 2.0];
+                let top_center = [x + 1.0, y + 2.0, z + 1.0];
+
+                let vertices = [
+                    // Base square with a normal pointing down
+                    (back_left, [0.0, -1.0, 0.0], [0.0, 0.0]),
+                    (back_right, [0.0, -1.0, 0.0], [1.0, 0.0]),
+                    (front_right, [0.0, -1.0, 0.0], [0.0, 1.0]),
+                    (front_left, [0.0, -1.0, 0.0], [1.0, 1.0]),
+                    // Triangle on the left side connecting to the top middle
+                    (back_left, [-1.0, 1.0, 0.0], [0.0, 0.0]),
+                    (top_center, [-1.0, 1.0, 0.0], [0.0, 0.0]),
+                    (front_left, [-1.0, 1.0, 0.0], [0.0, 0.0]),
+                    // Triangle on the front side connecting to the top middle
+                    (front_left, [0.0, 1.0, 1.0], [0.0, 0.0]),
+                    (top_center, [0.0, 1.0, 1.0], [0.0, 0.0]),
+                    (front_right, [0.0, 1.0, 1.0], [0.0, 0.0]),
+                    // Triangle on the right side connecting to the top middle
+                    (front_right, [1.0, 1.0, 0.0], [0.0, 0.0]),
+                    (top_center, [1.0, 1.0, 0.0], [0.0, 0.0]),
+                    (back_right, [1.0, 1.0, 0.0], [0.0, 0.0]),
+                    // Triangle on the back side connecting to the top middle
+                    (back_right, [0.0, 1.0, -1.0], [0.0, 0.0]),
+                    (top_center, [0.0, 1.0, -1.0], [0.0, 0.0]),
+                    (back_left, [0.0, 1.0, -1.0], [0.0, 0.0]),
+                ];
+                let indices = Indices::U32(vec![
+                    0, 1, 2, 2, 3, 0, // Base square
+                    4, 5, 6, // Left side
+                    7, 8, 9, // Front side
+                    10, 11, 12, // Right side
+                    13, 14, 15, // Back side
+                ]);
+                let mut positions = Vec::new();
+                let mut normals = Vec::new();
+                let mut uvs = Vec::new();
+
+                for (position, normal, uv) in vertices.iter() {
+                    positions.push(*position);
+                    normals.push(*normal);
+                    uvs.push(*uv);
+                }
+                let mut water_mesh = Mesh::new(PrimitiveTopology::TriangleList);
+
+                water_mesh.set_indices(Some(indices));
+                water_mesh.set_attribute(Mesh::ATTRIBUTE_POSITION, positions);
+                water_mesh.set_attribute(Mesh::ATTRIBUTE_NORMAL, normals);
+                water_mesh.set_attribute(Mesh::ATTRIBUTE_UV_0, uvs);
+                commands.spawn_bundle(PbrBundle {
+                    mesh: meshes.add(water_mesh),
+                    // render_pipelines: RenderPipelines::from_pipelines(vec![
+                    //     RenderPipeline::new(pipeline),
+                    // ]),
+                    material: materials.add(StandardMaterial {
+                        base_color: Color::BLUE,
+                        metallic: 0.2,
+                        reflectance: 0.7,
+                        ..Default::default()
+                    }),
+                    ..Default::default()
+                });
+            }
+        });
+
     println!("Build completed");
 
     let mut render_mesh = Mesh::new(PrimitiveTopology::TriangleList);
@@ -123,19 +167,19 @@ pub fn build(
     //             FRAGMENT_SHADER,
     //         ))),
     //     }));
-    commands.spawn_bundle(PbrBundle {
-        mesh: meshes.add(render_mesh),
-        // render_pipelines: RenderPipelines::from_pipelines(vec![
-        //     RenderPipeline::new(pipeline),
-        // ]),
-        material: materials.add(StandardMaterial {
-            base_color: Color::WHITE,
-            metallic: 1.0,
-            reflectance: 0.3,
-            ..Default::default()
-        }),
-        ..Default::default()
-    });
+    // commands.spawn_bundle(PbrBundle {
+    //     mesh: meshes.add(render_mesh),
+    //     // render_pipelines: RenderPipelines::from_pipelines(vec![
+    //     //     RenderPipeline::new(pipeline),
+    //     // ]),
+    //     material: materials.add(StandardMaterial {
+    //         base_color: Color::WHITE,
+    //         metallic: 1.0,
+    //         reflectance: 0.3,
+    //         ..Default::default()
+    //     }),
+    //     ..Default::default()
+    // });
 }
 #[derive(Debug)]
 struct NeighborHeights {
@@ -325,7 +369,11 @@ fn averaged_sdf(
                 }
             }
         }
-        sum / count as f32
+        if count == 0 {
+            0.0
+        } else {
+            sum / count as f32
+        }
     })
 }
 // TODO: The rest of this file has been copy-pasted
