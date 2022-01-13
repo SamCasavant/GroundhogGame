@@ -2,6 +2,8 @@
 /target
 /engine/target
 perf*
+/daylock_notes/*
+.idea/*
 Cargo.lock
 /engine/Cargo.lock
 .vscode
